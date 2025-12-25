@@ -9,14 +9,14 @@
  * {
  *   "env": {
  *     "OPENROUTER_API_KEY": "your-key",
- *     "CODE_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo"]
+ *     "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5", "openai/gpt-4o"]
  *   }
  * }
  *
  * Single model:
  * {
  *   "env": {
- *     "CODE_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet"]
+ *     "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5"]
  *   }
  * }
  *
@@ -47,7 +47,7 @@ export function parseModels(
 
 	// String provided - invalid format - throw error
 	throw new Error(
-		`Model configuration must be an array of strings, got: ${typeof envVar}. Example: ["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo"]`,
+		`Model configuration must be an array of strings, got: ${typeof envVar}. Example: ["anthropic/claude-sonnet-4.5", "openai/gpt-4o"]`,
 	);
 }
 

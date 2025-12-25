@@ -51,9 +51,9 @@ Add to your `claude_desktop_config.json`:
       "args": ["-y", "@klitchevo/code-council"],
       "env": {
         "OPENROUTER_API_KEY": "your-api-key-here",
-        "CODE_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo"],
-        "FRONTEND_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet"],
-        "BACKEND_REVIEW_MODELS": ["openai/gpt-4-turbo", "google/gemini-pro"]
+        "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5", "openai/gpt-4o"],
+        "FRONTEND_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5"],
+        "BACKEND_REVIEW_MODELS": ["openai/gpt-4o", "google/gemini-2.0-flash-exp"]
       }
     }
   }
@@ -259,9 +259,9 @@ You can customize which AI models are used for reviews by setting environment va
       "args": ["-y", "@klitchevo/code-council"],
       "env": {
         "OPENROUTER_API_KEY": "your-api-key",
-        "CODE_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo", "google/gemini-pro"],
-        "FRONTEND_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet"],
-        "BACKEND_REVIEW_MODELS": ["openai/gpt-4-turbo", "anthropic/claude-3.5-sonnet"]
+        "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5", "openai/gpt-4o", "google/gemini-2.0-flash-exp"],
+        "FRONTEND_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5"],
+        "BACKEND_REVIEW_MODELS": ["openai/gpt-4o", "anthropic/claude-sonnet-4.5"]
       }
     }
   }
@@ -275,12 +275,11 @@ If you don't specify models, the server uses these defaults:
 
 **Finding Models:**
 Browse all available models at [OpenRouter Models](https://openrouter.ai/models). Popular choices include:
-- `anthropic/claude-3.5-sonnet` - Excellent for code review
-- `openai/gpt-4-turbo` - Strong general-purpose model
-- `google/gemini-pro` - Fast and cost-effective
-- `meta-llama/llama-3.1-70b-instruct` - Open source option
-- `x-ai/grok-code-fast-1` - Optimized for code
-- `minimax/minimax-m2.1` - Good balance of speed and quality
+- `anthropic/claude-sonnet-4.5` - Latest Sonnet, excellent for code review
+- `anthropic/claude-opus-4.5` - Frontier reasoning model for complex tasks
+- `openai/gpt-4o` - Latest GPT-4 Omni model
+- `google/gemini-2.0-flash-exp` - Fast and affordable
+- `meta-llama/llama-3.3-70b-instruct` - Latest open source option
 
 ### Local Development
 
