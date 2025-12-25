@@ -1,6 +1,6 @@
 # Code Council
 
-[![npm version](https://img.shields.io/npm/v/code-council.svg)](https://www.npmjs.com/package/code-council)
+[![npm version](https://img.shields.io/npm/v/@klitchevo/code-council.svg)](https://www.npmjs.com/package/@klitchevo/code-council)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/klitchevo/code-council/workflows/CI/badge.svg)](https://github.com/klitchevo/code-council/actions)
 [![codecov](https://codecov.io/gh/klitchevo/code-council/branch/main/graph/badge.svg)](https://codecov.io/gh/klitchevo/code-council)
@@ -32,7 +32,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "code-council": {
       "command": "npx",
-      "args": ["-y", "code-council"],
+      "args": ["-y", "@klitchevo/code-council"],
       "env": {
         "OPENROUTER_API_KEY": "your-api-key-here"
       }
@@ -48,7 +48,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "code-council": {
       "command": "npx",
-      "args": ["-y", "code-council"],
+      "args": ["-y", "@klitchevo/code-council"],
       "env": {
         "OPENROUTER_API_KEY": "your-api-key-here",
         "CODE_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo"],
@@ -69,7 +69,7 @@ Add to your Cursor MCP settings (`.cursor/mcp.json` or similar):
   "mcpServers": {
     "code-council": {
       "command": "npx",
-      "args": ["-y", "code-council"],
+      "args": ["-y", "@klitchevo/code-council"],
       "env": {
         "OPENROUTER_API_KEY": "your-api-key-here"
       }
@@ -85,7 +85,7 @@ For any MCP client that supports environment variables:
 ```json
 {
   "command": "npx",
-  "args": ["-y", "code-council"],
+  "args": ["-y", "@klitchevo/code-council"],
   "env": {
     "OPENROUTER_API_KEY": "your-openrouter-api-key"
   }
@@ -97,7 +97,7 @@ For any MCP client that supports environment variables:
 If you prefer to install globally:
 
 ```bash
-npm install -g code-council
+npm install -g @klitchevo/code-council
 ```
 
 Then configure without npx:
@@ -106,7 +106,7 @@ Then configure without npx:
 {
   "mcpServers": {
     "code-council": {
-      "command": "code-council",
+      "command": "@klitchevo/code-council",
       "env": {
         "OPENROUTER_API_KEY": "your-api-key-here"
       }
@@ -224,7 +224,7 @@ You can customize which AI models are used for reviews by setting environment va
   "mcpServers": {
     "code-council": {
       "command": "npx",
-      "args": ["-y", "code-council"],
+      "args": ["-y", "@klitchevo/code-council"],
       "env": {
         "OPENROUTER_API_KEY": "your-api-key",
         "CODE_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo", "google/gemini-pro"],

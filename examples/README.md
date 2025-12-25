@@ -72,7 +72,7 @@ These examples use the default models, but you can customize which models review
   "mcpServers": {
     "code-council": {
       "command": "npx",
-      "args": ["-y", "code-council"],
+      "args": ["-y", "@klitchevo/code-council"],
       "env": {
         "OPENROUTER_API_KEY": "your-api-key",
         "CODE_REVIEW_MODELS": ["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo"],
