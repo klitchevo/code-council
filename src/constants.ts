@@ -23,10 +23,10 @@ export const INPUT_LIMITS = {
  * OpenRouter API configuration
  */
 export const LLM_CONFIG = {
-	/** Default temperature for model responses */
-	DEFAULT_TEMPERATURE: 0.3,
-	/** Default max tokens for responses */
-	DEFAULT_MAX_TOKENS: 4096,
+	/** Default temperature for model responses (can override with TEMPERATURE env var) */
+	DEFAULT_TEMPERATURE: Number(process.env.TEMPERATURE) || 0.3,
+	/** Default max tokens for responses (can override with MAX_TOKENS env var) */
+	DEFAULT_MAX_TOKENS: Number(process.env.MAX_TOKENS) || 16384,
 } as const;
 
 /**
