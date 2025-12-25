@@ -60,9 +60,9 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-#### Cline (VSCode Extension)
+#### Cursor
 
-Add to your MCP settings:
+Add to your Cursor MCP settings (`.cursor/mcp.json` or similar):
 
 ```json
 {
@@ -325,7 +325,7 @@ Make sure you've added the API key to the `env` section of your MCP client confi
 
 - Node.js >= 18.0.0
 - OpenRouter API key
-- MCP-compatible client (Claude Desktop, Cline, etc.)
+- MCP-compatible client (Claude Desktop, Cursor, etc.)
 
 ## License
 
