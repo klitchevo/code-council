@@ -8,7 +8,10 @@
 		"code-council": "./dist/index.js"
 	},
 	"files": [
-		"dist",
+		"dist/**/*.js",
+		"dist/**/*.d.ts",
+		"dist/**/*.d.ts.map",
+		"!dist/**/*.test.*",
 		"README.md",
 		"LICENSE",
 		".env.example"
