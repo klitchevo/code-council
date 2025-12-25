@@ -243,16 +243,10 @@ Show which AI models are currently configured for each review type.
 You can customize which AI models are used for reviews by setting environment variables in your MCP client configuration. Each review type can use different models.
 
 **Available Environment Variables:**
-
-**Model Configuration:**
 - `CODE_REVIEW_MODELS` - Models for general code reviews
 - `FRONTEND_REVIEW_MODELS` - Models for frontend reviews
 - `BACKEND_REVIEW_MODELS` - Models for backend reviews
 - `PLAN_REVIEW_MODELS` - Models for plan reviews
-
-**LLM Parameters:**
-- `TEMPERATURE` - Response temperature (0.0-2.0, default: 0.3)
-- `MAX_TOKENS` - Maximum response tokens (default: 16384)
 
 **Format:** Array of strings (JSON array)
 
@@ -314,6 +308,8 @@ npm run build
 5. Run:
 ```bash
 npm start
+# or use the convenience script:
+./run.sh
 ```
 
 6. For development with auto-rebuild:

@@ -42,8 +42,48 @@ describe("parseModels", () => {
 		});
 	});
 
+	describe("JSON string input (MCP format)", () => {
+		it("should parse JSON array string", () => {
+			const result = parseModels(
+				'["anthropic/claude-3.5-sonnet","openai/gpt-4-turbo"]',
+				defaults,
+			);
+			expect(result).toEqual([
+				"anthropic/claude-3.5-sonnet",
+				"openai/gpt-4-turbo",
+			]);
+		});
+
+		it("should parse JSON array with spaces", () => {
+			const result = parseModels(
+				'["anthropic/claude-3.5-sonnet", "openai/gpt-4-turbo"]',
+				defaults,
+			);
+			expect(result).toEqual([
+				"anthropic/claude-3.5-sonnet",
+				"openai/gpt-4-turbo",
+			]);
+		});
+
+		it("should filter empty strings from JSON array", () => {
+			const result = parseModels(
+				'["anthropic/claude-3.5-sonnet", "", "openai/gpt-4-turbo"]',
+				defaults,
+			);
+			expect(result).toEqual([
+				"anthropic/claude-3.5-sonnet",
+				"openai/gpt-4-turbo",
+			]);
+		});
+
+		it("should return defaults for empty JSON array", () => {
+			const result = parseModels("[]", defaults);
+			expect(result).toEqual(defaults);
+		});
+	});
+
 	describe("invalid formats (should throw)", () => {
-		it("should throw for string input", () => {
+		it("should throw for plain string", () => {
 			expect(() =>
 				parseModels("anthropic/claude-3.5-sonnet", defaults),
 			).toThrow("Model configuration must be an array of strings");
@@ -55,15 +95,6 @@ describe("parseModels", () => {
 			).toThrow("Model configuration must be an array of strings");
 		});
 
-		it("should throw for JSON array string", () => {
-			expect(() =>
-				parseModels(
-					'["anthropic/claude-3.5-sonnet","openai/gpt-4-turbo"]',
-					defaults,
-				),
-			).toThrow("Model configuration must be an array of strings");
-		});
-
 		it("should throw for empty string", () => {
 			expect(() => parseModels("", defaults)).toThrow(
 				"Model configuration must be an array of strings",
@@ -72,6 +103,12 @@ describe("parseModels", () => {
 
 		it("should throw for whitespace string", () => {
 			expect(() => parseModels("   ", defaults)).toThrow(
+				"Model configuration must be an array of strings",
+			);
+		});
+
+		it("should throw for JSON object", () => {
+			expect(() => parseModels('{"model": "test"}', defaults)).toThrow(
 				"Model configuration must be an array of strings",
 			);
 		});

@@ -39,13 +39,28 @@ export function parseModels(
 		return defaults;
 	}
 
-	// Must be an array
+	// Already an array
 	if (Array.isArray(envVar)) {
 		const filtered = envVar.filter((m) => m && m.trim().length > 0);
 		return filtered.length > 0 ? filtered : defaults;
 	}
 
-	// String provided - invalid format - throw error
+	// String - try to parse as JSON array
+	if (typeof envVar === "string") {
+		try {
+			const parsed = JSON.parse(envVar);
+			if (Array.isArray(parsed)) {
+				const filtered = parsed.filter(
+					(m) => typeof m === "string" && m.trim().length > 0,
+				);
+				return filtered.length > 0 ? filtered : defaults;
+			}
+		} catch {
+			// Not valid JSON, fall through to error
+		}
+	}
+
+	// Invalid format
 	throw new Error(
 		`Model configuration must be an array of strings, got: ${typeof envVar}. Example: ["anthropic/claude-sonnet-4.5", "openai/gpt-4o"]`,
 	);
