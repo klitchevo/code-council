@@ -124,17 +124,49 @@ Then configure without npx:
 
 ## Security Best Practices
 
-⚠️ **IMPORTANT**: Always provide your API key via environment variables in the MCP configuration, NOT in a `.env` file or hardcoded in config files.
+⚠️ **CRITICAL SECURITY WARNING**: Never commit your OpenRouter API key to git!
 
-### ✅ DO:
-- Store the API key in the `env` section of your MCP client configuration
-- The key stays in your local config file and is never committed to version control
-- Each MCP client isolates environment variables per server
+### MCP Config File Locations (Safe - Not in Git)
 
-### ❌ DON'T:
-- Don't put the API key directly in `.mcp.json` or similar config files
-- Don't commit API keys to git repositories
+MCP client configurations are stored **outside your project directory** and won't be committed:
+
+- **Claude Desktop**:
+  - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+  - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+  - Linux: `~/.config/Claude/claude_desktop_config.json`
+- **Cursor**: Global settings (not in project)
+- **Other MCP Clients**: Typically in user config directories
+
+These files are **safe to put your API key in** because they're not in your git repository.
+
+### ✅ SAFE:
+- Putting the API key in MCP client config files (they're outside git)
+- Using system environment variables and referencing them
+- Keeping configs in user directories (`~/.config/`, `~/Library/`, etc.)
+
+### ❌ NEVER DO:
+- Don't create `.mcp.json` or config files **inside your project directory**
+- Don't commit any file containing your API key to git
 - Don't share config files containing API keys
+- Don't hardcode API keys in code
+
+### Using Environment Variables (Extra Security)
+
+For added security, store the key in your shell environment:
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+export OPENROUTER_API_KEY="sk-or-v1-..."
+```
+
+Then reference it in your MCP config:
+```json
+{
+  "env": {
+    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+  }
+}
+```
 
 ## Available Tools
 
