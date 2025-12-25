@@ -314,8 +314,6 @@ npm run build
 5. Run:
 ```bash
 npm start
-# or use the convenience script:
-./run.sh
 ```
 
 6. For development with auto-rebuild:
