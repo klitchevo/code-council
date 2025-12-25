@@ -34,5 +34,6 @@ export const LLM_CONFIG = {
  */
 export const DEFAULT_MODELS: string[] = [
 	"minimax/minimax-m2.1",
+	"z-ai/glm-4.7",
 	"x-ai/grok-code-fast-1",
 ];
