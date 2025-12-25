@@ -1,5 +1,5 @@
 {
-	"name": "code-council",
+	"name": "@klitchevo/code-council",
 	"version": "0.0.1",
 	"description": "Multi-model AI code review server using OpenRouter - get diverse perspectives from multiple LLMs in parallel",
 	"main": "dist/index.js",
