@@ -1,0 +1,78 @@
+{
+	"name": "code-council",
+	"version": "1.0.0",
+	"description": "Multi-model AI code review server using OpenRouter - get diverse perspectives from multiple LLMs in parallel",
+	"main": "dist/index.js",
+	"type": "module",
+	"bin": {
+		"code-council": "./dist/index.js"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE",
+		".env.example"
+	],
+	"scripts": {
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"dev": "tsc --watch",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"lint": "biome lint src",
+		"lint:fix": "biome lint --write src",
+		"format": "biome format --write src",
+		"format:check": "biome format src",
+		"check": "biome check src",
+		"check:fix": "biome check --write src",
+		"typecheck": "tsc --noEmit",
+		"prepare": "lefthook install",
+		"prepublishOnly": "bun run typecheck && bun test && bun run build"
+	},
+	"keywords": [
+		"mcp",
+		"openrouter",
+		"code-review",
+		"frontend-review",
+		"backend-review",
+		"ai",
+		"llm",
+		"model-context-protocol",
+		"mcp-server",
+		"multi-model",
+		"code-analysis",
+		"static-analysis",
+		"ai-code-review",
+		"claude",
+		"gpt",
+		"gemini"
+	],
+	"author": "klitchevo",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/klitchevo/code-council.git"
+	},
+	"bugs": {
+		"url": "https://github.com/klitchevo/code-council/issues"
+	},
+	"homepage": "https://github.com/klitchevo/code-council#readme",
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "1.25.1",
+		"@openrouter/sdk": "0.3.10",
+		"dotenv": "17.2.3",
+		"zod": "4.2.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.10",
+		"@types/node": "25.0.3",
+		"@vitest/coverage-v8": "4.0.16",
+		"lefthook": "2.0.12",
+		"typescript": "5.9.3",
+		"vitest": "4.0.16"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
+}

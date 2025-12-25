@@ -1,0 +1,36 @@
+# Lefthook configuration for Git hooks
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    biome-check:
+      glob: "*.{js,ts,json}"
+      exclude: "biome.json|node_modules/|dist/"
+      run: node node_modules/@biomejs/biome/bin/biome check --write --diagnostic-level="error" --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+    typecheck:
+      glob: "src/**/*.ts"
+      run: bun typecheck
+
+commit-msg:
+  commands:
+    check-commit-message:
+      run: |
+        # Basic commit message validation
+        # Ensures commit messages are not empty and have reasonable length
+        msg=$(cat {1})
+        if [ -z "$msg" ]; then
+          echo "Commit message cannot be empty"
+          exit 1
+        fi
+        if [ ${#msg} -lt 3 ]; then
+          echo "Commit message too short (minimum 3 characters)"
+          exit 1
+        fi
+
+pre-push:
+  commands:
+    build-check:
+      run: bun run build

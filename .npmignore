@@ -1,0 +1,28 @@
+# Source files
+src/
+*.test.ts
+*.spec.ts
+
+# Config files
+.env
+.env.*
+!.env.example
+tsconfig.json
+vitest.config.ts
+lefthook.yml
+biome.json
+
+# Git
+.git/
+.github/
+.gitignore
+
+# Dependencies
+node_modules/
+
+# Coverage
+coverage/
+
+# Misc
+*.log
+.DS_Store
