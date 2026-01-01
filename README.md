@@ -5,6 +5,8 @@
 [![CI](https://github.com/klitchevo/code-council/workflows/CI/badge.svg)](https://github.com/klitchevo/code-council/actions)
 [![codecov](https://codecov.io/gh/klitchevo/code-council/branch/main/graph/badge.svg)](https://codecov.io/gh/klitchevo/code-council)
 
+![Code Council](assets/code-council.png)
+
 **Your AI Code Review Council** - Get diverse perspectives from multiple AI models in parallel.
 
 An MCP (Model Context Protocol) server that provides AI-powered code review using multiple models from [OpenRouter](https://openrouter.ai). Think of it as assembling a council of AI experts to review your code, each bringing their unique perspective.
