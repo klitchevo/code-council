@@ -26,6 +26,7 @@ import {
 	frontendReviewSchema,
 	handleFrontendReview,
 } from "./tools/review-frontend";
+import { gitReviewSchema, handleGitReview } from "./tools/review-git";
 import { handlePlanReview, planReviewSchema } from "./tools/review-plan";
 
 // Validate API key
@@ -79,6 +80,14 @@ createReviewTool(server, {
 		"Review implementation plans BEFORE coding to catch issues early using multiple AI models in parallel",
 	inputSchema: planReviewSchema,
 	handler: (input) => handlePlanReview(client, input),
+});
+
+createReviewTool(server, {
+	name: "review_git_changes",
+	description:
+		"Review git changes (staged, unstaged, diff, or specific commit) using multiple AI models in parallel",
+	inputSchema: gitReviewSchema,
+	handler: (input) => handleGitReview(client, CODE_REVIEW_MODELS, input),
 });
 
 // Register config tool

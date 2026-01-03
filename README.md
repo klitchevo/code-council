@@ -17,6 +17,7 @@ An MCP (Model Context Protocol) server that provides AI-powered code review usin
 - 🎨 **Frontend Review** - Specialized reviews for accessibility, performance, and UX
 - 🔒 **Backend Review** - Security, architecture, and performance analysis
 - 📋 **Plan Review** - Review implementation plans before writing code
+- 📝 **Git Changes Review** - Review staged, unstaged, branch diffs, or specific commits
 - ⚡ **Parallel Execution** - All models run concurrently for fast results
 
 ## Quick Start
@@ -234,6 +235,28 @@ Use review_plan to analyze this implementation plan:
 [paste your plan]
 ```
 
+### `review_git_changes`
+
+Review git changes directly from your repository.
+
+**Parameters:**
+- `review_type` (optional): `staged`, `unstaged`, `diff`, or `commit` (default: `staged`)
+  - `staged` - Review staged changes (`git diff --cached`)
+  - `unstaged` - Review unstaged changes (`git diff`)
+  - `diff` - Review branch diff (`git diff main..HEAD`)
+  - `commit` - Review a specific commit (requires `commit_hash`)
+- `commit_hash` (optional): Commit hash to review (required when `review_type` is `commit`)
+- `context` (optional): Additional context about the changes
+
+**Example usage in Claude:**
+```
+Use review_git_changes to review my staged changes
+```
+
+```
+Use review_git_changes with review_type=commit and commit_hash=abc123 to review that commit
+```
+
 ### `list_review_config`
 
 Show which AI models are currently configured for each review type.
@@ -249,8 +272,10 @@ You can customize which AI models are used for reviews by setting environment va
 - `FRONTEND_REVIEW_MODELS` - Models for frontend reviews
 - `BACKEND_REVIEW_MODELS` - Models for backend reviews
 - `PLAN_REVIEW_MODELS` - Models for plan reviews
+- `TEMPERATURE` - Control response randomness (0.0-2.0, default: 0.3)
+- `MAX_TOKENS` - Maximum response tokens (default: 16384)
 
-**Format:** Array of strings (JSON array)
+**Format:** Model arrays use JSON array format
 
 **Example:**
 ```json
@@ -263,7 +288,9 @@ You can customize which AI models are used for reviews by setting environment va
         "OPENROUTER_API_KEY": "your-api-key",
         "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5", "openai/gpt-4o", "google/gemini-2.0-flash-exp"],
         "FRONTEND_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5"],
-        "BACKEND_REVIEW_MODELS": ["openai/gpt-4o", "anthropic/claude-sonnet-4.5"]
+        "BACKEND_REVIEW_MODELS": ["openai/gpt-4o", "anthropic/claude-sonnet-4.5"],
+        "TEMPERATURE": "0.5",
+        "MAX_TOKENS": "32000"
       }
     }
   }
@@ -273,6 +300,7 @@ You can customize which AI models are used for reviews by setting environment va
 **Default Models:**
 If you don't specify models, the server uses these defaults:
 - `minimax/minimax-m2.1`
+- `z-ai/glm-4.7`
 - `x-ai/grok-code-fast-1`
 
 **Finding Models:**
@@ -332,9 +360,10 @@ npm run dev
 - Each review runs across multiple models simultaneously
 - Costs vary by model - check [OpenRouter pricing](https://openrouter.ai/models)
 - You can reduce costs by:
-  - Using fewer models (edit `src/config.ts`)
+  - Using fewer models in your configuration
   - Choosing cheaper models
   - Using specific `review_type` options instead of `full` reviews
+  - Lowering `MAX_TOKENS` (default: 16384) for shorter responses
 
 ## Troubleshooting
 
