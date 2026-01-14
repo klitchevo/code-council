@@ -17,7 +17,7 @@ vi.mock("../logger", () => ({
 
 import { execSync } from "node:child_process";
 
-const mockExecSync = vi.mocked(execSync);
+const mockExecSync = execSync as unknown as ReturnType<typeof vi.fn>;
 
 describe("review-git tool", () => {
 	let mockClient: Pick<ReviewClient, "reviewCode"> & Partial<ReviewClient>;
