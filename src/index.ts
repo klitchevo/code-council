@@ -10,11 +10,18 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
 	BACKEND_REVIEW_MODELS,
 	CODE_REVIEW_MODELS,
+	DISCUSSION_MODELS,
 	FRONTEND_REVIEW_MODELS,
 	PLAN_REVIEW_MODELS,
 } from "./config";
 import { logger } from "./logger";
 import { ReviewClient } from "./review-client";
+import { InMemorySessionStore } from "./session/in-memory-store";
+import { createConversationTool } from "./tools/conversation-factory";
+import {
+	discussCouncilSchema,
+	handleDiscussCouncil,
+} from "./tools/discuss-council";
 import { createReviewTool } from "./tools/factory";
 import { handleListConfig } from "./tools/list-config";
 import {
@@ -42,8 +49,9 @@ if (!OPENROUTER_API_KEY) {
 	process.exit(1);
 }
 
-// Initialize client and server
+// Initialize client, session store, and server
 const client = new ReviewClient(OPENROUTER_API_KEY);
+const sessionStore = new InMemorySessionStore();
 const server = new McpServer({
 	name: "code-council",
 	version: "1.0.0",
@@ -102,6 +110,32 @@ server.registerTool(
 	},
 );
 
+// Register council discussion tool
+createConversationTool(
+	server,
+	{
+		name: "discuss_with_council",
+		description:
+			"Start or continue a multi-turn discussion with the AI council. " +
+			"First call (without session_id) starts a new discussion and returns a session_id. " +
+			"Subsequent calls with the session_id continue the conversation. " +
+			"Each model maintains its own conversation history for authentic perspectives.",
+		inputSchema: discussCouncilSchema,
+		handler: (input, store) => handleDiscussCouncil(client, input, store),
+	},
+	sessionStore,
+);
+
+// Graceful shutdown handlers
+function handleShutdown(signal: string) {
+	logger.info(`Received ${signal}, shutting down gracefully`);
+	sessionStore.shutdown();
+	process.exit(0);
+}
+
+process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+process.on("SIGINT", () => handleShutdown("SIGINT"));
+
 // Start server
 async function main() {
 	const transport = new StdioServerTransport();
@@ -112,6 +146,7 @@ async function main() {
 		frontendReviewModels: FRONTEND_REVIEW_MODELS,
 		backendReviewModels: BACKEND_REVIEW_MODELS,
 		planReviewModels: PLAN_REVIEW_MODELS,
+		discussionModels: DISCUSSION_MODELS,
 	});
 }
 

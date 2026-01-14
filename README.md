@@ -18,6 +18,7 @@ An MCP (Model Context Protocol) server that provides AI-powered code review usin
 - 🔒 **Backend Review** - Security, architecture, and performance analysis
 - 📋 **Plan Review** - Review implementation plans before writing code
 - 📝 **Git Changes Review** - Review staged, unstaged, branch diffs, or specific commits
+- 💬 **Council Discussions** - Multi-turn conversations with the AI council for deeper exploration
 - ⚡ **Parallel Execution** - All models run concurrently for fast results
 
 ## Quick Start
@@ -257,6 +258,32 @@ Use review_git_changes to review my staged changes
 Use review_git_changes with review_type=commit and commit_hash=abc123 to review that commit
 ```
 
+### `discuss_with_council`
+
+Have multi-turn conversations with the AI council. Start a discussion, get feedback from all models, then ask follow-up questions while maintaining context.
+
+**Parameters:**
+- `message` (required): Your message or question for the council
+- `session_id` (optional): Session ID to continue an existing discussion (omit to start new)
+- `discussion_type` (optional): `code_review`, `plan_review`, or `general` (default: `general`)
+- `context` (optional): Additional context (code snippets, plan details, etc.)
+
+**Example usage in Claude:**
+```
+Use discuss_with_council to ask: What's the best way to implement error handling in a Node.js API?
+```
+
+**Continuing a discussion:**
+```
+Use discuss_with_council with session_id=<id-from-previous-response> to ask: Can you elaborate on the circuit breaker pattern you mentioned?
+```
+
+**Key features:**
+- Each model maintains its own conversation history for authentic diverse perspectives
+- Sessions persist for 30 minutes of inactivity
+- Rate limited to 10 requests per minute per session
+- Context windowing keeps conversations efficient
+
 ### `list_review_config`
 
 Show which AI models are currently configured for each review type.
@@ -272,6 +299,7 @@ You can customize which AI models are used for reviews by setting environment va
 - `FRONTEND_REVIEW_MODELS` - Models for frontend reviews
 - `BACKEND_REVIEW_MODELS` - Models for backend reviews
 - `PLAN_REVIEW_MODELS` - Models for plan reviews
+- `DISCUSSION_MODELS` - Models for council discussions
 - `TEMPERATURE` - Control response randomness (0.0-2.0, default: 0.3)
 - `MAX_TOKENS` - Maximum response tokens (default: 16384)
 
@@ -299,9 +327,10 @@ You can customize which AI models are used for reviews by setting environment va
 
 **Default Models:**
 If you don't specify models, the server uses these defaults:
-- `minimax/minimax-m2.1`
-- `z-ai/glm-4.7`
-- `x-ai/grok-code-fast-1`
+- `minimax/minimax-m2.1` - Fast, cost-effective reasoning
+- `z-ai/glm-4.7` - Strong multilingual capabilities
+- `moonshotai/kimi-k2-thinking` - Advanced reasoning with thinking
+- `deepseek/deepseek-v3.2` - State-of-the-art open model
 
 **Finding Models:**
 Browse all available models at [OpenRouter Models](https://openrouter.ai/models). Popular choices include:

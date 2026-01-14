@@ -20,7 +20,7 @@
  *   }
  * }
  *
- * If not configured, defaults to minimax/minimax-m2.1 and x-ai/grok-code-fast-1
+ * If not configured, defaults to minimax-m2.1, glm-4.7, kimi-k2-thinking, and deepseek-v3.2
  */
 
 import { DEFAULT_MODELS } from "./constants";
@@ -46,18 +46,16 @@ export function parseModels(
 	}
 
 	// String - try to parse as JSON array
-	if (typeof envVar === "string") {
-		try {
-			const parsed = JSON.parse(envVar);
-			if (Array.isArray(parsed)) {
-				const filtered = parsed.filter(
-					(m) => typeof m === "string" && m.trim().length > 0,
-				);
-				return filtered.length > 0 ? filtered : defaults;
-			}
-		} catch {
-			// Not valid JSON, fall through to error
+	try {
+		const parsed = JSON.parse(envVar);
+		if (Array.isArray(parsed)) {
+			const filtered = parsed.filter(
+				(m) => typeof m === "string" && m.trim().length > 0,
+			);
+			return filtered.length > 0 ? filtered : defaults;
 		}
+	} catch {
+		// Not valid JSON, fall through to error
 	}
 
 	// Invalid format
@@ -96,5 +94,14 @@ export const BACKEND_REVIEW_MODELS: string[] = parseModels(
  */
 export const PLAN_REVIEW_MODELS: string[] = parseModels(
 	process.env.PLAN_REVIEW_MODELS as string | string[] | undefined,
+	DEFAULT_MODELS,
+);
+
+/**
+ * Models to use for council discussions (runs in parallel)
+ * Multi-turn conversations with the AI council
+ */
+export const DISCUSSION_MODELS: string[] = parseModels(
+	process.env.DISCUSSION_MODELS as string | string[] | undefined,
 	DEFAULT_MODELS,
 );

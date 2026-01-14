@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseModels } from "./config";
 
 describe("parseModels", () => {
-	const defaults = ["minimax/minimax-m2.1", "x-ai/grok-code-fast-1"];
+	const defaults = ["minimax/minimax-m2.1", "moonshotai/kimi-k2-thinking"];
 
 	it("should return defaults when env var is undefined", () => {
 		expect(parseModels(undefined, defaults)).toEqual(defaults);

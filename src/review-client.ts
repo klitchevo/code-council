@@ -4,7 +4,7 @@
  */
 
 import { OpenRouter } from "@openrouter/sdk";
-import { LLM_CONFIG } from "./constants";
+import { LLM_CONFIG, SESSION_LIMITS } from "./constants";
 import { OpenRouterError } from "./errors";
 import { logger } from "./logger";
 import * as backendReviewPrompts from "./prompts/backend-review";
@@ -12,6 +12,14 @@ import * as codeReviewPrompts from "./prompts/code-review";
 import * as frontendReviewPrompts from "./prompts/frontend-review";
 import * as planReviewPrompts from "./prompts/plan-review";
 import { executeInParallel } from "./utils/parallel-executor";
+
+/**
+ * Message type for multi-turn conversations
+ */
+export interface ChatMessage {
+	role: "system" | "user" | "assistant";
+	content: string;
+}
 
 /**
  * Result from a single model's review.
@@ -201,5 +209,113 @@ export class ReviewClient {
 		return executeInParallel(models, (model) =>
 			this.chat(model, planReviewPrompts.SYSTEM_PROMPT, userMessage),
 		);
+	}
+
+	/**
+	 * Send a multi-turn chat request with full message history
+	 * @param model - Model identifier
+	 * @param messages - Full conversation history
+	 * @param timeoutMs - Optional timeout in milliseconds
+	 * @returns The model's response content
+	 * @throws {OpenRouterError} If the API call fails or times out
+	 */
+	async chatMultiTurn(
+		model: string,
+		messages: ChatMessage[],
+		timeoutMs?: number,
+	): Promise<string> {
+		const timeout = timeoutMs ?? SESSION_LIMITS.MODEL_TIMEOUT_MS;
+
+		try {
+			logger.debug("Sending multi-turn chat request", {
+				model,
+				messageCount: messages.length,
+			});
+
+			// Create abort controller for timeout
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+			try {
+				const response = await this.client.chat.send({
+					model,
+					messages: messages.map((m) => ({
+						role: m.role,
+						content: m.content,
+					})),
+					temperature: LLM_CONFIG.DEFAULT_TEMPERATURE,
+					maxTokens: LLM_CONFIG.DEFAULT_MAX_TOKENS,
+				});
+
+				clearTimeout(timeoutId);
+
+				const content = response.choices?.[0]?.message?.content;
+
+				if (typeof content === "string") {
+					logger.debug("Received multi-turn response", {
+						model,
+						length: content.length,
+					});
+					return content;
+				}
+
+				if (Array.isArray(content)) {
+					const text = content
+						.filter((item) => item.type === "text")
+						.map((item) => (item as { type: "text"; text: string }).text)
+						.join("\n");
+					logger.debug("Received array response", {
+						model,
+						length: text.length,
+					});
+					return text;
+				}
+
+				throw new OpenRouterError("No response content from model", 500);
+			} finally {
+				clearTimeout(timeoutId);
+			}
+		} catch (error) {
+			if (error instanceof OpenRouterError) {
+				throw error;
+			}
+
+			const message = error instanceof Error ? error.message : "Unknown error";
+			logger.error("Multi-turn chat request failed", error, { model });
+
+			// Check for timeout/abort
+			if (
+				message.includes("abort") ||
+				message.includes("timeout") ||
+				(error instanceof Error && error.name === "AbortError")
+			) {
+				throw new OpenRouterError(
+					`Request timed out after ${timeout}ms`,
+					408,
+					true,
+				);
+			}
+
+			const isRetryable =
+				message.includes("429") || message.includes("rate limit");
+			throw new OpenRouterError(message, undefined, isRetryable);
+		}
+	}
+
+	/**
+	 * Conduct a council discussion with multiple models
+	 * Each model uses its own conversation history from the provided function
+	 * @param models - Array of model identifiers
+	 * @param getMessagesForModel - Function to get messages for each model
+	 * @returns Array of results from each model
+	 */
+	async discussWithCouncil(
+		models: readonly string[],
+		getMessagesForModel: (model: string) => ChatMessage[],
+	): Promise<ModelReviewResult[]> {
+		return executeInParallel([...models], async (model) => {
+			const messages = getMessagesForModel(model);
+			return this.chatMultiTurn(model, messages);
+		});
 	}
 }

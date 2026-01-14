@@ -35,5 +35,26 @@ export const LLM_CONFIG = {
 export const DEFAULT_MODELS: string[] = [
 	"minimax/minimax-m2.1",
 	"z-ai/glm-4.7",
-	"x-ai/grok-code-fast-1",
+	"moonshotai/kimi-k2-thinking",
+	"deepseek/deepseek-v3.2",
 ];
+
+/**
+ * Session management configuration for multi-turn discussions
+ */
+export const SESSION_LIMITS = {
+	/** Maximum number of concurrent sessions */
+	MAX_SESSIONS: 100,
+	/** Maximum messages per model in a session (context windowing) */
+	MAX_MESSAGES_PER_MODEL: 50,
+	/** Maximum message length in bytes (10KB) */
+	MAX_MESSAGE_LENGTH: 10 * 1024,
+	/** Session TTL in milliseconds (30 minutes) */
+	TTL_MS: 30 * 60 * 1000,
+	/** Cleanup interval in milliseconds (5 minutes) */
+	CLEANUP_INTERVAL_MS: 5 * 60 * 1000,
+	/** Rate limit: max requests per session per minute */
+	RATE_LIMIT_PER_MINUTE: 10,
+	/** Per-model timeout in milliseconds (30 seconds) */
+	MODEL_TIMEOUT_MS: 30 * 1000,
+} as const;
