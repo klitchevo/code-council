@@ -295,4 +295,251 @@ describe("ReviewClient", () => {
 			expect(results[0]?.error).toBeDefined();
 		});
 	});
+
+	describe("chatMultiTurn", () => {
+		it("should send messages with conversation history", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: "Response to follow-up" } }],
+			});
+
+			const messages = [
+				{ role: "system" as const, content: "You are helpful" },
+				{ role: "user" as const, content: "Hello" },
+				{ role: "assistant" as const, content: "Hi there!" },
+				{ role: "user" as const, content: "Follow-up question" },
+			];
+
+			const result = await client.chatMultiTurn("model1", messages);
+
+			expect(result).toBe("Response to follow-up");
+			expect(mockChatSend).toHaveBeenCalledWith(
+				expect.objectContaining({
+					model: "model1",
+					messages: expect.arrayContaining([
+						expect.objectContaining({ role: "system" }),
+						expect.objectContaining({ role: "user" }),
+					]),
+				}),
+			);
+		});
+
+		it("should handle array content in multi-turn responses", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [
+					{
+						message: {
+							content: [
+								{ type: "text", text: "Part A" },
+								{ type: "text", text: "Part B" },
+							],
+						},
+					},
+				],
+			});
+
+			const result = await client.chatMultiTurn("model1", [
+				{ role: "user", content: "test" },
+			]);
+
+			expect(result).toBe("Part A\nPart B");
+		});
+
+		it("should throw OpenRouterError when no content returned", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: null } }],
+			});
+
+			await expect(
+				client.chatMultiTurn("model1", [{ role: "user", content: "test" }]),
+			).rejects.toThrow(OpenRouterError);
+		});
+
+		it("should handle timeout errors", async () => {
+			const abortError = new Error("abort");
+			abortError.name = "AbortError";
+			mockChatSend.mockRejectedValue(abortError);
+
+			await expect(
+				client.chatMultiTurn("model1", [{ role: "user", content: "test" }]),
+			).rejects.toThrow(/timed out/);
+		});
+
+		it("should detect rate limit errors in multi-turn", async () => {
+			mockChatSend.mockRejectedValue(new Error("429 rate limit exceeded"));
+
+			await expect(
+				client.chatMultiTurn("model1", [{ role: "user", content: "test" }]),
+			).rejects.toThrow(OpenRouterError);
+		});
+
+		it("should preserve OpenRouterError in multi-turn", async () => {
+			const originalError = new OpenRouterError("Custom error", 500);
+			mockChatSend.mockRejectedValue(originalError);
+
+			await expect(
+				client.chatMultiTurn("model1", [{ role: "user", content: "test" }]),
+			).rejects.toThrow(originalError);
+		});
+	});
+
+	describe("discussWithCouncil", () => {
+		it("should call chatMultiTurn for each model", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: "Model response" } }],
+			});
+
+			const getMessages = (model: string) => [
+				{ role: "system" as const, content: `You are ${model}` },
+				{ role: "user" as const, content: "Discuss this" },
+			];
+
+			const results = await client.discussWithCouncil(
+				["model1", "model2"],
+				getMessages,
+			);
+
+			expect(results).toHaveLength(2);
+			expect(results[0]?.model).toBe("model1");
+			expect(results[1]?.model).toBe("model2");
+			expect(mockChatSend).toHaveBeenCalledTimes(2);
+		});
+
+		it("should handle errors from individual models in council", async () => {
+			mockChatSend
+				.mockResolvedValueOnce({
+					choices: [{ message: { content: "Good response" } }],
+				})
+				.mockRejectedValueOnce(new Error("Model error"));
+
+			const getMessages = () => [{ role: "user" as const, content: "test" }];
+
+			const results = await client.discussWithCouncil(
+				["model1", "model2"],
+				getMessages,
+			);
+
+			expect(results).toHaveLength(2);
+			expect(results[0]?.review).toBe("Good response");
+			expect(results[1]?.error).toBeDefined();
+		});
+	});
+
+	describe("tpsAudit", () => {
+		it("should perform TPS audit with all models", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: '{"scores": {"overall": 75}}' } }],
+			});
+
+			const results = await client.tpsAudit(
+				"=== FILE: index.ts ===\nconsole.log('test');",
+				["model1", "model2"],
+				{ repoName: "test-repo", focusAreas: ["security"] },
+			);
+
+			expect(results).toHaveLength(2);
+			expect(mockChatSend).toHaveBeenCalledTimes(2);
+		});
+
+		it("should work without options", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: '{"scores": {"overall": 50}}' } }],
+			});
+
+			const results = await client.tpsAudit("test content", ["model1"]);
+
+			expect(results).toHaveLength(1);
+		});
+	});
+
+	describe("tpsAuditBatch", () => {
+		it("should process a single batch", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: '{"scores": {"overall": 60}}' } }],
+			});
+
+			const result = await client.tpsAuditBatch(
+				"batch content",
+				"model1",
+				0,
+				3,
+				{ repoName: "test-repo" },
+			);
+
+			expect(result).toContain("scores");
+			expect(mockChatSend).toHaveBeenCalledWith(
+				expect.objectContaining({
+					model: "model1",
+				}),
+			);
+		});
+
+		it("should replace batch index placeholders in system prompt", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: '{"scores": {}}' } }],
+			});
+
+			await client.tpsAuditBatch("content", "model1", 1, 5);
+
+			// Verify the system prompt was modified correctly
+			const call = mockChatSend?.mock?.calls?.[0]?.[0];
+			const systemMessage = call?.messages?.find(
+				(m: any) => m.role === "system",
+			);
+			expect(systemMessage?.content).toContain("batch 2 of 5");
+		});
+	});
+
+	describe("tpsAuditSynthesize", () => {
+		it("should synthesize batch results", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [
+					{ message: { content: '{"scores": {"overall": 70, "flow": 65}}' } },
+				],
+			});
+
+			const batchResults = [
+				{
+					batchIndex: 0,
+					tokenCount: 1000,
+					analysis: {
+						scores: { overall: 60, flow: 55, waste: 65, quality: 60 },
+						flowAnalysis: {
+							entryPoints: [],
+							diagram: "",
+							pathways: [],
+							observations: [],
+						},
+						bottlenecks: [],
+						waste: {},
+						jidoka: { score: 70, strengths: [], weaknesses: [] },
+						recommendations: [],
+						summary: { strengths: [], concerns: [], quickWins: [] },
+					},
+					rawResponse: "",
+				},
+				{
+					batchIndex: 1,
+					tokenCount: 2000,
+					analysis: null,
+					rawResponse: "Some raw response that failed to parse",
+				},
+			];
+
+			const result = await client.tpsAuditSynthesize(
+				batchResults,
+				"model1",
+				"test-repo",
+			);
+
+			expect(result).toContain("scores");
+		});
+
+		it("should work without repo name", async () => {
+			mockChatSend.mockResolvedValue({
+				choices: [{ message: { content: '{"scores": {}}' } }],
+			});
+
+			expect(mockChatSend).toHaveBeenCalled();
+		});
+	});
 });

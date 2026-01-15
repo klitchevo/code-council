@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createFileBatches, type FileInput } from "./repo-scanner";
+import {
+	aggregateFiles,
+	createFileBatches,
+	type FileInput,
+} from "./repo-scanner";
 
 /**
  * Tests for repo-scanner utilities.
@@ -167,6 +171,94 @@ describe("repo-scanner", () => {
 			const estimated = Math.ceil(content.length / 4);
 			expect(estimated).toBeGreaterThan(0);
 			expect(estimated).toBeLessThan(content.length);
+		});
+	});
+
+	describe("aggregateFiles", () => {
+		it("should aggregate files with markers", () => {
+			const files: FileInput[] = [
+				{ path: "src/index.ts", content: "console.log('hello');" },
+				{
+					path: "src/utils.ts",
+					content: "export const add = (a, b) => a + b;",
+				},
+			];
+
+			const result = aggregateFiles(files);
+
+			expect(result).toContain("=== FILE: src/index.ts ===");
+			expect(result).toContain("console.log('hello');");
+			expect(result).toContain("=== END FILE: src/index.ts ===");
+			expect(result).toContain("=== FILE: src/utils.ts ===");
+			expect(result).toContain("export const add = (a, b) => a + b;");
+			expect(result).toContain("=== END FILE: src/utils.ts ===");
+		});
+
+		it("should handle empty array", () => {
+			const result = aggregateFiles([]);
+			expect(result).toBe("");
+		});
+
+		it("should handle single file", () => {
+			const files: FileInput[] = [{ path: "README.md", content: "# Hello" }];
+			const result = aggregateFiles(files);
+
+			expect(result).toContain("=== FILE: README.md ===");
+			expect(result).toContain("# Hello");
+			expect(result).toContain("=== END FILE: README.md ===");
+		});
+	});
+
+	describe("createFileBatches additional cases", () => {
+		it("should handle a directory larger than budget by splitting files", () => {
+			// Create a single directory with very large files
+			const hugeContent = "x".repeat(100000); // ~25000 tokens per file
+			const files: FileInput[] = [
+				{ path: "src/huge1.ts", content: hugeContent },
+				{ path: "src/huge2.ts", content: hugeContent },
+				{ path: "src/huge3.ts", content: hugeContent },
+			];
+
+			// Budget of 30000 tokens - each file is ~25000, so needs splitting
+			const batches = createFileBatches(files, 30000);
+
+			// Should create multiple batches since files exceed budget
+			expect(batches.length).toBeGreaterThan(1);
+			// Each batch should have files
+			for (const batch of batches) {
+				expect(batch.files.length).toBeGreaterThan(0);
+			}
+		});
+
+		it("should start new batch when directory doesn't fit in current batch", () => {
+			const files: FileInput[] = [
+				// First directory - small files
+				{ path: "small/a.ts", content: "a".repeat(4000) }, // ~1000 tokens
+				{ path: "small/b.ts", content: "b".repeat(4000) }, // ~1000 tokens
+				// Second directory - medium files that don't fit with first
+				{ path: "medium/c.ts", content: "c".repeat(80000) }, // ~20000 tokens
+				{ path: "medium/d.ts", content: "d".repeat(80000) }, // ~20000 tokens
+			];
+
+			// Use budget that forces split
+			const batches = createFileBatches(files, 25000);
+
+			// Should create multiple batches
+			expect(batches.length).toBeGreaterThan(1);
+		});
+
+		it("should preserve batch index ordering", () => {
+			const files: FileInput[] = [
+				{ path: "a.ts", content: "x".repeat(40000) },
+				{ path: "b.ts", content: "y".repeat(40000) },
+				{ path: "c.ts", content: "z".repeat(40000) },
+			];
+
+			const batches = createFileBatches(files, 15000);
+
+			for (let i = 0; i < batches.length; i++) {
+				expect(batches[i]?.batchIndex).toBe(i);
+			}
 		});
 	});
 });
