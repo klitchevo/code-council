@@ -20,6 +20,10 @@ export type WasteType =
  * TPS Analysis output structure
  * AI must return JSON matching this interface
  */
+// Allow both strings and rich objects for flexible model output
+// biome-ignore lint/suspicious/noExplicitAny: Models return varied formats
+type FlexibleItem = string | Record<string, any>;
+
 export interface TpsAnalysis {
 	scores: {
 		overall: number; // 0-100
@@ -28,10 +32,10 @@ export interface TpsAnalysis {
 		quality: number; // 0-100
 	};
 	flowAnalysis: {
-		entryPoints: string[]; // Main entry files
+		entryPoints: FlexibleItem[]; // Main entry files (string or {path, description})
 		diagram: string; // ASCII flow diagram
-		pathways: string[]; // Key data/control pathways
-		observations: string[]; // Flow observations
+		pathways: FlexibleItem[]; // Key data/control pathways (string or {name, from, to, bottlenecks})
+		observations: FlexibleItem[]; // Flow observations
 	};
 	bottlenecks: Array<{
 		id: string;
@@ -53,8 +57,8 @@ export interface TpsAnalysis {
 	jidoka: {
 		// Built-in quality
 		score: number;
-		strengths: string[];
-		weaknesses: string[];
+		strengths: FlexibleItem[];
+		weaknesses: FlexibleItem[];
 	};
 	recommendations: Array<{
 		priority: number; // 1 = highest
@@ -65,9 +69,9 @@ export interface TpsAnalysis {
 		category: "flow" | "waste" | "quality" | "automation" | "architecture";
 	}>;
 	summary: {
-		strengths: string[];
-		concerns: string[];
-		quickWins: string[];
+		strengths: FlexibleItem[];
+		concerns: FlexibleItem[];
+		quickWins: FlexibleItem[];
 	};
 }
 
@@ -200,8 +204,110 @@ Your JSON response:`);
 }
 
 /**
+ * System prompt for batch analysis - slightly modified to note partial view
+ */
+export const BATCH_SYSTEM_PROMPT = `${SYSTEM_PROMPT}
+
+IMPORTANT: You are analyzing a BATCH of files from a larger codebase. This is batch {{BATCH_INDEX}} of {{TOTAL_BATCHES}}.
+- Focus on what you can observe in this batch
+- Note any cross-cutting concerns you see
+- Your analysis will be combined with other batches for a final report
+- Score this batch independently based on what you observe`;
+
+/**
+ * Build the user message for a batch analysis
+ */
+export function buildBatchUserMessage(
+	aggregatedContent: string,
+	batchIndex: number,
+	totalBatches: number,
+	options?: {
+		focusAreas?: string[];
+		repoName?: string;
+	},
+): string {
+	const baseMessage = buildUserMessage(aggregatedContent, options);
+	return `[BATCH ${batchIndex + 1} of ${totalBatches}]\n\n${baseMessage}`;
+}
+
+/**
+ * System prompt for synthesizing multiple batch analyses into a final report
+ */
+export const SYNTHESIS_SYSTEM_PROMPT = `You are a TPS (Toyota Production System) consultant synthesizing multiple batch analyses of a codebase into a unified report.
+
+You will receive multiple TPS analysis JSON objects, each analyzing a different portion of the codebase. Your job is to:
+
+1. **Aggregate Scores**: Calculate weighted averages based on batch sizes
+2. **Merge Findings**: Combine bottlenecks, waste items, and recommendations, removing duplicates
+3. **Identify Patterns**: Note patterns that appear across multiple batches
+4. **Prioritize**: Re-prioritize recommendations based on the full picture
+5. **Synthesize Summary**: Create a cohesive summary of the entire codebase
+
+Output a single unified TpsAnalysis JSON that represents the whole codebase.
+
+Guidelines:
+- If multiple batches mention the same issue, increase its priority
+- Cross-batch patterns are often more important than single-batch issues
+- Flow analysis should try to connect entry points across batches
+- Be concise - don't repeat the same finding multiple times
+- Final scores should reflect the overall health, not just average`;
+
+/**
+ * Build the synthesis user message
+ */
+export function buildSynthesisUserMessage(
+	batchResults: Array<{
+		batchIndex: number;
+		tokenCount: number;
+		analysis: TpsAnalysis | null;
+		rawResponse: string;
+	}>,
+	repoName?: string,
+): string {
+	const parts: string[] = [];
+
+	if (repoName) {
+		parts.push(`## Repository: ${repoName}`);
+	}
+
+	parts.push(`## Batch Analyses to Synthesize
+
+You have ${batchResults.length} batch analyses to combine into a final report.`);
+
+	for (const batch of batchResults) {
+		parts.push(
+			`### Batch ${batch.batchIndex + 1} (~${batch.tokenCount} tokens)`,
+		);
+		if (batch.analysis) {
+			parts.push("```json");
+			parts.push(JSON.stringify(batch.analysis, null, 2));
+			parts.push("```");
+		} else {
+			parts.push("*Analysis failed to parse. Raw response:*");
+			parts.push(
+				batch.rawResponse.substring(0, 1000) +
+					(batch.rawResponse.length > 1000 ? "..." : ""),
+			);
+		}
+	}
+
+	parts.push(`## Response Format
+
+Synthesize all batches into a single unified TpsAnalysis JSON.
+- Combine and deduplicate findings
+- Recalculate overall scores based on all batches
+- Prioritize issues that appear in multiple batches
+- Create a cohesive summary
+
+Your unified JSON response:`);
+
+	return parts.join("\n\n");
+}
+
+/**
  * Parse the TPS analysis from model response
  * Handles markdown code blocks and validates structure
+ * Normalizes different response formats to standard TpsAnalysis
  */
 export function parseTpsAnalysis(response: string): TpsAnalysis | null {
 	try {
@@ -220,19 +326,150 @@ export function parseTpsAnalysis(response: string): TpsAnalysis | null {
 
 		jsonStr = jsonStr.trim();
 
-		const parsed = JSON.parse(jsonStr) as TpsAnalysis;
+		const raw = JSON.parse(jsonStr) as Record<string, unknown>;
 
-		// Basic validation
-		if (
-			typeof parsed.scores?.overall !== "number" ||
-			!Array.isArray(parsed.bottlenecks) ||
-			!Array.isArray(parsed.recommendations)
-		) {
+		// Normalize scores - models return in different formats
+		const scores = normalizeScores(raw);
+		if (!scores) {
 			return null;
 		}
 
-		return parsed;
+		// Build normalized analysis
+		const analysis: TpsAnalysis = {
+			scores,
+			flowAnalysis: normalizeFlowAnalysis(raw),
+			bottlenecks: normalizeBottlenecks(raw),
+			waste: normalizeWaste(raw),
+			jidoka: normalizeJidoka(raw),
+			recommendations: normalizeRecommendations(raw),
+			summary: normalizeSummary(raw),
+		};
+
+		return analysis;
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * Normalize scores from various model formats
+ */
+function normalizeScores(
+	raw: Record<string, unknown>,
+): TpsAnalysis["scores"] | null {
+	// Format 1: scores object with named fields
+	if (raw.scores && typeof raw.scores === "object") {
+		const s = raw.scores as Record<string, unknown>;
+		return {
+			overall: toNumber(s.overall) ?? toNumber(raw.overallScore) ?? 0,
+			flow: toNumber(s.flow) ?? 0,
+			waste: toNumber(s.waste) ?? 0,
+			quality: toNumber(s.quality) ?? 0,
+		};
+	}
+
+	// Format 2: flat fields like overallScore, flowScore, etc.
+	if (typeof raw.overallScore === "number" || typeof raw.overall === "number") {
+		return {
+			overall: toNumber(raw.overallScore) ?? toNumber(raw.overall) ?? 0,
+			flow: toNumber(raw.flowScore) ?? toNumber(raw.flow) ?? 0,
+			waste: toNumber(raw.wasteScore) ?? toNumber(raw.waste) ?? 0,
+			quality: toNumber(raw.qualityScore) ?? toNumber(raw.quality) ?? 0,
+		};
+	}
+
+	return null;
+}
+
+function toNumber(val: unknown): number | null {
+	if (typeof val === "number") return val;
+	if (typeof val === "string") {
+		const n = parseFloat(val);
+		return isNaN(n) ? null : n;
+	}
+	return null;
+}
+
+function normalizeFlowAnalysis(
+	raw: Record<string, unknown>,
+): TpsAnalysis["flowAnalysis"] {
+	const flow = raw.flowAnalysis as Record<string, unknown> | undefined;
+	if (!flow) {
+		return { entryPoints: [], diagram: "", pathways: [], observations: [] };
+	}
+
+	return {
+		entryPoints: normalizeStringArray(flow.entryPoints) as FlexibleItem[],
+		diagram: typeof flow.diagram === "string" ? flow.diagram : "",
+		pathways: normalizeStringArray(flow.pathways) as FlexibleItem[],
+		observations: normalizeStringArray(flow.observations) as FlexibleItem[],
+	};
+}
+
+function normalizeWaste(raw: Record<string, unknown>): TpsAnalysis["waste"] {
+	const waste = raw.waste as Record<string, unknown> | undefined;
+	if (!waste || typeof waste !== "object") {
+		return {};
+	}
+	// Return as-is since it's a mapped type
+	return waste as TpsAnalysis["waste"];
+}
+
+function normalizeJidoka(raw: Record<string, unknown>): TpsAnalysis["jidoka"] {
+	const jidoka = raw.jidoka as Record<string, unknown> | undefined;
+	if (!jidoka) {
+		return { score: 0, strengths: [], weaknesses: [] };
+	}
+
+	return {
+		score: toNumber(jidoka.score) ?? 0,
+		strengths: normalizeStringArray(jidoka.strengths) as FlexibleItem[],
+		weaknesses: normalizeStringArray(jidoka.weaknesses) as FlexibleItem[],
+	};
+}
+
+function normalizeBottlenecks(
+	raw: Record<string, unknown>,
+): TpsAnalysis["bottlenecks"] {
+	const bottlenecks = raw.bottlenecks;
+	if (Array.isArray(bottlenecks)) {
+		return bottlenecks as TpsAnalysis["bottlenecks"];
+	}
+	return [];
+}
+
+function normalizeRecommendations(
+	raw: Record<string, unknown>,
+): TpsAnalysis["recommendations"] {
+	const recs = raw.recommendations;
+	if (Array.isArray(recs)) {
+		return recs as TpsAnalysis["recommendations"];
+	}
+	return [];
+}
+
+function normalizeSummary(
+	raw: Record<string, unknown>,
+): TpsAnalysis["summary"] {
+	const summary = raw.summary as Record<string, unknown> | undefined;
+	if (!summary) {
+		return { strengths: [], concerns: [], quickWins: [] };
+	}
+
+	return {
+		strengths: normalizeStringArray(summary.strengths) as FlexibleItem[],
+		concerns: normalizeStringArray(summary.concerns) as FlexibleItem[],
+		quickWins: normalizeStringArray(summary.quickWins) as FlexibleItem[],
+	};
+}
+
+/**
+ * Normalize array values - keep objects as-is for rich formatting in templates
+ * The HTML template has smart formatters that handle both strings and objects
+ */
+function normalizeStringArray(val: unknown): unknown[] {
+	if (Array.isArray(val)) {
+		return val;
+	}
+	return [];
 }

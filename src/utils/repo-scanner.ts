@@ -68,12 +68,14 @@ const SECRET_CONTENT_PATTERNS = [
  * Default file extensions to include in scans
  */
 const DEFAULT_FILE_EXTENSIONS = [
+	// TypeScript/JavaScript
 	".ts",
 	".tsx",
 	".js",
 	".jsx",
 	".mjs",
 	".cjs",
+	// Other languages
 	".py",
 	".go",
 	".rs",
@@ -88,9 +90,38 @@ const DEFAULT_FILE_EXTENSIONS = [
 	".h",
 	".hpp",
 	".swift",
+	// Frontend frameworks
 	".vue",
 	".svelte",
 	".astro",
+	// Config & docs (important for understanding project)
+	".json",
+	".yaml",
+	".yml",
+	".toml",
+	".md",
+];
+
+/**
+ * Priority directories - always scanned first, never skipped
+ * These contain critical project configuration and context
+ */
+const PRIORITY_DIRS = [
+	".claude", // Claude Code project configuration
+	".beads", // Issue tracking
+];
+
+/**
+ * Priority files at repo root - always included if they exist
+ */
+const PRIORITY_ROOT_FILES = [
+	"CLAUDE.md",
+	"README.md",
+	"package.json",
+	"tsconfig.json",
+	"pyproject.toml",
+	"Cargo.toml",
+	"go.mod",
 ];
 
 /**
@@ -400,6 +431,10 @@ export async function scanRepository(
 			}
 
 			if (stats.isDirectory()) {
+				// Skip priority directories in main scan (they're scanned first)
+				if (depth === 0 && PRIORITY_DIRS.includes(entry)) {
+					continue;
+				}
 				scanDir(fullPath, depth + 1);
 			} else if (stats.isFile()) {
 				totalFilesFound++;
@@ -477,7 +512,76 @@ export async function scanRepository(
 		}
 	}
 
-	// Start scanning from repo root
+	/**
+	 * Scan a single file if it meets criteria (used for priority files)
+	 */
+	function scanSingleFile(fullPath: string, bypassTypeFilter = false): boolean {
+		const relativePath = relative(repoRoot, fullPath);
+
+		let stats: Stats;
+		try {
+			stats = statSync(fullPath);
+		} catch {
+			return false;
+		}
+
+		if (!stats.isFile()) return false;
+
+		totalFilesFound++;
+
+		// Check file extension (bypass for priority files)
+		const ext = extname(fullPath).toLowerCase();
+		if (!bypassTypeFilter && !opts.fileTypes.includes(ext)) {
+			return false;
+		}
+
+		// Check file size
+		if (stats.size > opts.maxFileSize) {
+			skipped.push({
+				path: relativePath,
+				reason: `File too large (${stats.size} bytes)`,
+			});
+			return false;
+		}
+
+		// Read file content
+		let content: string;
+		try {
+			const buffer = readFileSync(fullPath);
+			if (isBinaryContent(buffer)) {
+				return false;
+			}
+			content = buffer.toString("utf-8");
+		} catch {
+			return false;
+		}
+
+		files.push({ path: relativePath, content });
+		totalSize += stats.size;
+		return true;
+	}
+
+	// 1. First scan priority root files (CLAUDE.md, README.md, package.json, etc.)
+	for (const filename of PRIORITY_ROOT_FILES) {
+		const fullPath = join(repoRoot, filename);
+		scanSingleFile(fullPath, true); // bypass type filter for priority files
+	}
+
+	// 2. Scan priority directories (.claude, .beads) - these are critical for context
+	for (const priorityDir of PRIORITY_DIRS) {
+		const dirPath = join(repoRoot, priorityDir);
+		try {
+			const dirStats = statSync(dirPath);
+			if (dirStats.isDirectory()) {
+				logger.debug("Scanning priority directory", { dir: priorityDir });
+				scanDir(dirPath, 0);
+			}
+		} catch {
+			// Directory doesn't exist, that's fine
+		}
+	}
+
+	// 3. Then scan the rest of the repo
 	scanDir(repoRoot);
 
 	const stats: ScanStats = {
@@ -515,4 +619,132 @@ export function aggregateFiles(files: FileInput[]): string {
 				`=== FILE: ${f.path} ===\n${f.content}\n=== END FILE: ${f.path} ===`,
 		)
 		.join("\n\n");
+}
+
+/**
+ * Token budget for batching - conservative limit that works for all models
+ */
+const BATCH_TOKEN_BUDGET = 60000;
+
+/**
+ * A batch of files for processing
+ */
+export interface FileBatch {
+	files: FileInput[];
+	tokenEstimate: number;
+	batchIndex: number;
+}
+
+/**
+ * Create batches of files that fit within token budget
+ * Groups files by directory to keep related code together
+ *
+ * @param files - Files to batch
+ * @param tokenBudget - Maximum tokens per batch (default: 60000)
+ * @returns Array of file batches
+ */
+export function createFileBatches(
+	files: FileInput[],
+	tokenBudget = BATCH_TOKEN_BUDGET,
+): FileBatch[] {
+	if (files.length === 0) {
+		return [];
+	}
+
+	// Group files by directory for better context
+	const filesByDir = new Map<string, FileInput[]>();
+	for (const file of files) {
+		const dir = file.path.includes("/")
+			? file.path.substring(0, file.path.lastIndexOf("/"))
+			: ".";
+		const dirFiles = filesByDir.get(dir) || [];
+		dirFiles.push(file);
+		filesByDir.set(dir, dirFiles);
+	}
+
+	// Sort directories by total token count (smallest first for better packing)
+	const dirsWithTokens = [...filesByDir.entries()].map(([dir, dirFiles]) => ({
+		dir,
+		files: dirFiles,
+		tokens: dirFiles.reduce((sum, f) => sum + estimateTokens(f.content), 0),
+	}));
+	dirsWithTokens.sort((a, b) => a.tokens - b.tokens);
+
+	const batches: FileBatch[] = [];
+	let currentBatch: FileInput[] = [];
+	let currentTokens = 0;
+
+	for (const { files: dirFiles, tokens: dirTokens } of dirsWithTokens) {
+		// If entire directory fits in current batch, add it
+		if (currentTokens + dirTokens <= tokenBudget) {
+			currentBatch.push(...dirFiles);
+			currentTokens += dirTokens;
+		}
+		// If directory is too large for any batch, split it
+		else if (dirTokens > tokenBudget) {
+			// Finalize current batch if non-empty
+			if (currentBatch.length > 0) {
+				batches.push({
+					files: currentBatch,
+					tokenEstimate: currentTokens,
+					batchIndex: batches.length,
+				});
+				currentBatch = [];
+				currentTokens = 0;
+			}
+
+			// Split large directory into individual files
+			for (const file of dirFiles) {
+				const fileTokens = estimateTokens(file.content);
+
+				if (
+					currentTokens + fileTokens > tokenBudget &&
+					currentBatch.length > 0
+				) {
+					batches.push({
+						files: currentBatch,
+						tokenEstimate: currentTokens,
+						batchIndex: batches.length,
+					});
+					currentBatch = [];
+					currentTokens = 0;
+				}
+
+				currentBatch.push(file);
+				currentTokens += fileTokens;
+			}
+		}
+		// Start new batch with this directory
+		else {
+			if (currentBatch.length > 0) {
+				batches.push({
+					files: currentBatch,
+					tokenEstimate: currentTokens,
+					batchIndex: batches.length,
+				});
+			}
+			currentBatch = [...dirFiles];
+			currentTokens = dirTokens;
+		}
+	}
+
+	// Don't forget the last batch
+	if (currentBatch.length > 0) {
+		batches.push({
+			files: currentBatch,
+			tokenEstimate: currentTokens,
+			batchIndex: batches.length,
+		});
+	}
+
+	logger.debug("Created file batches", {
+		totalFiles: files.length,
+		batchCount: batches.length,
+		batchSizes: batches.map((b) => ({
+			files: b.files.length,
+			tokens: b.tokenEstimate,
+		})),
+	});
+
+	return batches;
 }

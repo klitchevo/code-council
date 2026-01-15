@@ -160,10 +160,22 @@ describe("tps-audit prompts", () => {
 			expect(parseTpsAnalysis("{invalid}")).toBeNull();
 		});
 
-		it("should return null for missing required fields", () => {
+		it("should return null when no scores can be extracted", () => {
+			// No scores object and no flat score fields
 			expect(parseTpsAnalysis("{}")).toBeNull();
-			expect(parseTpsAnalysis('{"scores": {}}')).toBeNull();
-			expect(parseTpsAnalysis('{"scores": {"overall": 50}}')).toBeNull();
+			expect(parseTpsAnalysis('{"foo": "bar"}')).toBeNull();
+		});
+
+		it("should fill defaults for partial scores", () => {
+			// Parser now fills in defaults for flexible model responses
+			const result1 = parseTpsAnalysis('{"scores": {}}');
+			expect(result1).not.toBeNull();
+			expect(result1?.scores.overall).toBe(0);
+
+			const result2 = parseTpsAnalysis('{"scores": {"overall": 50}}');
+			expect(result2).not.toBeNull();
+			expect(result2?.scores.overall).toBe(50);
+			expect(result2?.scores.flow).toBe(0);
 		});
 
 		it("should handle whitespace around JSON", () => {

@@ -834,7 +834,124 @@
 
     function createListItem(text) {
       const li = document.createElement('li');
-      li.textContent = text;
+      li.textContent = typeof text === 'string' ? text : JSON.stringify(text);
+      return li;
+    }
+
+    // Smart formatter for entry points (can be string or {file, description} object)
+    function createEntryPointItem(ep) {
+      const li = document.createElement('li');
+      if (typeof ep === 'string') {
+        li.textContent = ep;
+      } else if (ep && typeof ep === 'object') {
+        const file = ep.file || ep.path || ep.name || '';
+        const desc = ep.description || ep.desc || '';
+        if (file && desc) {
+          li.innerHTML = `<code style="color: var(--accent-cyan); font-family: var(--font-mono);">${escapeHtml(file)}</code> — ${escapeHtml(desc)}`;
+        } else if (file) {
+          li.innerHTML = `<code style="color: var(--accent-cyan); font-family: var(--font-mono);">${escapeHtml(file)}</code>`;
+        } else if (desc) {
+          li.textContent = desc;
+        } else {
+          li.textContent = Object.values(ep).filter(v => typeof v === 'string').join(' — ') || 'Unknown entry point';
+        }
+      } else {
+        li.textContent = String(ep);
+      }
+      return li;
+    }
+
+    // Smart formatter for pathways (can be string or {name, description, steps, from, to} object)
+    function createPathwayItem(p) {
+      const li = document.createElement('li');
+      if (typeof p === 'string') {
+        li.textContent = p;
+      } else if (p && typeof p === 'object') {
+        const name = p.name || p.path || p.flow || p.description || '';
+        const desc = p.description !== name ? p.description : '';
+        const steps = Array.isArray(p.steps) ? p.steps : [];
+        const from = p.from || '';
+        const to = p.to || '';
+        const bottlenecks = Array.isArray(p.bottlenecks) ? p.bottlenecks : [];
+
+        let html = '';
+        if (name) {
+          html += `<strong style="color: var(--text-bright);">${escapeHtml(name)}</strong>`;
+        }
+        if (from && to) {
+          html += ` <span style="color: var(--text-secondary);">(${escapeHtml(from)} → ${escapeHtml(to)})</span>`;
+        }
+        if (steps.length > 0) {
+          html += `<div style="margin-top: 0.5rem; padding-left: 1rem; font-size: 0.9em; color: var(--text-secondary);">${steps.map(s => escapeHtml(s)).join('<br>')}</div>`;
+        }
+        if (bottlenecks.length > 0) {
+          html += `<div style="margin-top: 0.5rem; color: var(--accent-warm); font-size: 0.85em;">⚠ ${bottlenecks.map(b => escapeHtml(b)).join(', ')}</div>`;
+        }
+
+        if (html) {
+          li.innerHTML = html;
+        } else {
+          li.textContent = Object.values(p).filter(v => typeof v === 'string').join(' — ') || 'Unknown pathway';
+        }
+      } else {
+        li.textContent = String(p);
+      }
+      return li;
+    }
+
+    // Smart formatter for quick wins (can be string or {title, effort, impact} object)
+    function createQuickWinItem(q) {
+      const li = document.createElement('li');
+      if (typeof q === 'string') {
+        li.textContent = q;
+      } else if (q && typeof q === 'object') {
+        const title = q.title || q.name || q.description || q.action || q.change || '';
+        const effort = q.effort || '';
+        const impact = q.impact || '';
+
+        let html = '';
+        if (title) {
+          html += `<span style="color: var(--text-bright);">${escapeHtml(title)}</span>`;
+        }
+        if (effort || impact) {
+          const badges = [];
+          if (effort) badges.push(`<span class="effort-badge">${escapeHtml(effort)}</span>`);
+          if (impact) badges.push(`<span style="color: var(--accent-success); font-size: 0.85em;">${escapeHtml(impact)} impact</span>`);
+          html += ` ${badges.join(' • ')}`;
+        }
+
+        if (html) {
+          li.innerHTML = html;
+        } else {
+          li.textContent = Object.values(q).filter(v => typeof v === 'string').join(' — ') || 'Unknown quick win';
+        }
+      } else {
+        li.textContent = String(q);
+      }
+      return li;
+    }
+
+    // Smart formatter for strengths/concerns (can be string or {title, description} object)
+    function createSummaryItem(item) {
+      const li = document.createElement('li');
+      if (typeof item === 'string') {
+        li.textContent = item;
+      } else if (item && typeof item === 'object') {
+        const title = item.title || item.name || '';
+        const desc = item.description || item.detail || '';
+
+        if (title && desc) {
+          li.innerHTML = `<strong style="color: var(--text-bright);">${escapeHtml(title)}:</strong> ${escapeHtml(desc)}`;
+        } else if (title) {
+          li.textContent = title;
+        } else if (desc) {
+          li.textContent = desc;
+        } else {
+          li.textContent = Object.values(item).filter(v => typeof v === 'string').join(' — ') || 'Unknown item';
+        }
+      } else {
+        li.textContent = String(item);
+      }
       return li;
     }
 
@@ -1067,18 +1184,18 @@
       const concernsList = document.getElementById('summary-concerns');
       const quickwinsList = document.getElementById('summary-quickwins');
 
-      analysis.summary.strengths.map(s => strengthsList.appendChild(createListItem(s)));
-      analysis.summary.concerns.map(c => concernsList.appendChild(createListItem(c)));
-      analysis.summary.quickWins.map(q => quickwinsList.appendChild(createListItem(q)));
+      analysis.summary.strengths.map(s => strengthsList.appendChild(createSummaryItem(s)));
+      analysis.summary.concerns.map(c => concernsList.appendChild(createSummaryItem(c)));
+      analysis.summary.quickWins.map(q => quickwinsList.appendChild(createQuickWinItem(q)));
 
       // Flow analysis
       document.getElementById('flow-diagram').textContent = analysis.flowAnalysis.diagram || 'No flow diagram generated.';
 
       const entrypointsList = document.getElementById('flow-entrypoints');
-      analysis.flowAnalysis.entryPoints.map(ep => entrypointsList.appendChild(createListItem(ep)));
+      analysis.flowAnalysis.entryPoints.map(ep => entrypointsList.appendChild(createEntryPointItem(ep)));
 
       const pathwaysList = document.getElementById('flow-pathways');
-      analysis.flowAnalysis.pathways.map(p => pathwaysList.appendChild(createListItem(p)));
+      analysis.flowAnalysis.pathways.map(p => pathwaysList.appendChild(createPathwayItem(p)));
 
       // Bottlenecks
       const bottlenecksList = document.getElementById('bottlenecks-list');
@@ -1106,8 +1223,8 @@
       const jidokaWeaknesses = document.getElementById('jidoka-weaknesses');
 
       if (analysis.jidoka) {
-        analysis.jidoka.strengths.map(s => jidokaStrengths.appendChild(createListItem(s)));
-        analysis.jidoka.weaknesses.map(w => jidokaWeaknesses.appendChild(createListItem(w)));
+        analysis.jidoka.strengths.map(s => jidokaStrengths.appendChild(createSummaryItem(s)));
+        analysis.jidoka.weaknesses.map(w => jidokaWeaknesses.appendChild(createSummaryItem(w)));
       }
 
       // Recommendations

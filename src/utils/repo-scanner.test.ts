@@ -1,10 +1,94 @@
 import { describe, expect, it } from "vitest";
+import { createFileBatches, type FileInput } from "./repo-scanner";
 
 /**
  * Tests for repo-scanner utilities.
  * Note: aggregateFiles tests are in aggregate-files.test.ts to avoid mock pollution.
  */
 describe("repo-scanner", () => {
+	describe("createFileBatches", () => {
+		it("should return empty array for empty input", () => {
+			const batches = createFileBatches([]);
+			expect(batches).toEqual([]);
+		});
+
+		it("should create single batch for small content", () => {
+			const files: FileInput[] = [
+				{ path: "src/index.ts", content: "console.log('hello');" },
+				{
+					path: "src/utils.ts",
+					content: "export const add = (a, b) => a + b;",
+				},
+			];
+
+			const batches = createFileBatches(files, 60000);
+
+			expect(batches.length).toBe(1);
+			expect(batches[0]?.files.length).toBe(2);
+			expect(batches[0]?.batchIndex).toBe(0);
+		});
+
+		it("should create multiple batches when content exceeds budget", () => {
+			// Create files that exceed the budget
+			const largeContent = "x".repeat(30000); // ~7500 tokens
+			const files: FileInput[] = [
+				{ path: "src/a.ts", content: largeContent },
+				{ path: "src/b.ts", content: largeContent },
+				{ path: "src/c.ts", content: largeContent },
+			];
+
+			// Use small budget to force multiple batches
+			const batches = createFileBatches(files, 10000);
+
+			expect(batches.length).toBeGreaterThan(1);
+
+			// Verify batch indices are correct
+			for (let i = 0; i < batches.length; i++) {
+				expect(batches[i]?.batchIndex).toBe(i);
+			}
+		});
+
+		it("should group files by directory", () => {
+			const files: FileInput[] = [
+				{ path: "src/components/Button.tsx", content: "Button" },
+				{ path: "src/components/Input.tsx", content: "Input" },
+				{ path: "src/utils/helpers.ts", content: "helpers" },
+				{ path: "src/utils/format.ts", content: "format" },
+			];
+
+			const batches = createFileBatches(files, 60000);
+
+			// With small files and large budget, should be single batch
+			expect(batches.length).toBe(1);
+			expect(batches[0]?.files.length).toBe(4);
+		});
+
+		it("should handle files in root directory", () => {
+			const files: FileInput[] = [
+				{ path: "index.ts", content: "main entry" },
+				{ path: "config.ts", content: "config" },
+			];
+
+			const batches = createFileBatches(files, 60000);
+
+			expect(batches.length).toBe(1);
+			expect(batches[0]?.files.length).toBe(2);
+		});
+
+		it("should calculate token estimates correctly", () => {
+			const files: FileInput[] = [
+				{ path: "a.ts", content: "x".repeat(100) }, // ~25 tokens
+				{ path: "b.ts", content: "y".repeat(200) }, // ~50 tokens
+			];
+
+			const batches = createFileBatches(files, 60000);
+
+			expect(batches.length).toBe(1);
+			// Token estimate should be sum of individual estimates
+			expect(batches[0]?.tokenEstimate).toBeGreaterThan(0);
+		});
+	});
+
 	describe("sensitive file detection patterns", () => {
 		it("should identify sensitive file patterns", () => {
 			const sensitivePatterns = [

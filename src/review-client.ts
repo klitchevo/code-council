@@ -352,4 +352,74 @@ export class ReviewClient {
 			this.chat(model, tpsAuditPrompts.SYSTEM_PROMPT, userMessage),
 		);
 	}
+
+	/**
+	 * Perform TPS audit on a single batch of content
+	 * @internal Used by batch processing
+	 */
+	async tpsAuditBatch(
+		aggregatedContent: string,
+		model: string,
+		batchIndex: number,
+		totalBatches: number,
+		options?: {
+			focusAreas?: string[];
+			repoName?: string;
+		},
+	): Promise<string> {
+		const systemPrompt = tpsAuditPrompts.BATCH_SYSTEM_PROMPT.replace(
+			"{{BATCH_INDEX}}",
+			String(batchIndex + 1),
+		).replace("{{TOTAL_BATCHES}}", String(totalBatches));
+
+		const userMessage = tpsAuditPrompts.buildBatchUserMessage(
+			aggregatedContent,
+			batchIndex,
+			totalBatches,
+			{
+				focusAreas: options?.focusAreas,
+				repoName: options?.repoName,
+			},
+		);
+
+		logger.debug("Processing TPS batch", {
+			batchIndex,
+			totalBatches,
+			model,
+			contentLength: aggregatedContent.length,
+		});
+
+		return this.chat(model, systemPrompt, userMessage);
+	}
+
+	/**
+	 * Synthesize multiple batch analyses into a unified report
+	 * @internal Used by batch processing
+	 */
+	async tpsAuditSynthesize(
+		batchResults: Array<{
+			batchIndex: number;
+			tokenCount: number;
+			analysis: tpsAuditPrompts.TpsAnalysis | null;
+			rawResponse: string;
+		}>,
+		model: string,
+		repoName?: string,
+	): Promise<string> {
+		const userMessage = tpsAuditPrompts.buildSynthesisUserMessage(
+			batchResults,
+			repoName,
+		);
+
+		logger.debug("Synthesizing TPS batch results", {
+			batchCount: batchResults.length,
+			model,
+		});
+
+		return this.chat(
+			model,
+			tpsAuditPrompts.SYNTHESIS_SYSTEM_PROMPT,
+			userMessage,
+		);
+	}
 }

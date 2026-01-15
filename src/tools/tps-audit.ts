@@ -10,6 +10,7 @@ import type { TpsAnalysis } from "../prompts/tps-audit";
 import type { ModelReviewResult, ReviewClient } from "../review-client";
 import {
 	aggregateFiles,
+	createFileBatches,
 	type ScanResult,
 	scanRepository,
 } from "../utils/repo-scanner";
@@ -69,6 +70,11 @@ export interface TpsAuditResult {
 }
 
 /**
+ * Token threshold for batching - use batching when content exceeds this
+ */
+const BATCH_TOKEN_THRESHOLD = 60000;
+
+/**
  * Handle TPS audit request
  */
 export async function handleTpsAudit(
@@ -124,36 +130,52 @@ export async function handleTpsAudit(
 		});
 	}
 
-	// Aggregate files into single content string
-	const aggregatedContent = aggregateFiles(scanResult.files);
-
 	logger.info("Repository scanned", {
 		filesIncluded: scanResult.files.length,
 		totalSize: scanResult.stats.totalSize,
 		tokenEstimate: scanResult.stats.tokenEstimate,
 	});
 
-	// Check token budget
-	if (scanResult.stats.tokenEstimate > 100000) {
-		logger.warn("Large token count", {
-			estimate: scanResult.stats.tokenEstimate,
-		});
-	}
+	const repoName = scanResult.repoRoot.split("/").pop();
 
-	// Call ReviewClient for TPS analysis
-	const results = await client.tpsAudit(aggregatedContent, models, {
-		focusAreas: input.focus_areas,
-		repoName: scanResult.repoRoot.split("/").pop(),
-	});
+	// Decide whether to use batching based on token count
+	const needsBatching = scanResult.stats.tokenEstimate > BATCH_TOKEN_THRESHOLD;
 
-	// Try to parse the first successful result for structured analysis
+	let results: ModelReviewResult[];
 	let analysis: TpsAnalysis | null = null;
-	for (const result of results) {
-		if (!result.error && result.review) {
-			// Import parseTpsAnalysis dynamically to avoid circular deps
-			const { parseTpsAnalysis } = await import("../prompts/tps-audit");
-			analysis = parseTpsAnalysis(result.review);
-			if (analysis) break;
+
+	if (needsBatching) {
+		// Use batch processing for large codebases
+		logger.info("Using batch processing", {
+			tokenEstimate: scanResult.stats.tokenEstimate,
+			threshold: BATCH_TOKEN_THRESHOLD,
+		});
+
+		const batchResults = await handleBatchedTpsAudit(
+			client,
+			models,
+			scanResult,
+			input.focus_areas,
+		);
+
+		results = batchResults.results;
+		analysis = batchResults.analysis;
+	} else {
+		// Single-pass processing for smaller codebases
+		const aggregatedContent = aggregateFiles(scanResult.files);
+
+		results = await client.tpsAudit(aggregatedContent, models, {
+			focusAreas: input.focus_areas,
+			repoName,
+		});
+
+		// Try to parse the first successful result for structured analysis
+		for (const result of results) {
+			if (!result.error && result.review) {
+				const { parseTpsAnalysis } = await import("../prompts/tps-audit");
+				analysis = parseTpsAnalysis(result.review);
+				if (analysis) break;
+			}
 		}
 	}
 
@@ -163,6 +185,131 @@ export async function handleTpsAudit(
 		scanResult,
 		analysis,
 		outputFormat,
+	};
+}
+
+/**
+ * Handle TPS audit with batching for large codebases
+ * Each model analyzes ALL batches, then synthesizes their findings
+ */
+async function handleBatchedTpsAudit(
+	client: ReviewClient,
+	models: string[],
+	scanResult: ScanResult,
+	focusAreas?: string[],
+): Promise<{ results: ModelReviewResult[]; analysis: TpsAnalysis | null }> {
+	const { parseTpsAnalysis } = await import("../prompts/tps-audit");
+	const repoName = scanResult.repoRoot.split("/").pop() ?? "unknown";
+
+	// Create batches from files
+	const batches = createFileBatches(scanResult.files);
+	const batchContents = batches.map((batch) => ({
+		content: aggregateFiles(batch.files),
+		tokenEstimate: batch.tokenEstimate,
+		batchIndex: batch.batchIndex,
+	}));
+
+	logger.info("Processing batches with all models", {
+		batchCount: batches.length,
+		modelCount: models.length,
+		totalApiCalls: batches.length * models.length + models.length, // batches + synthesis per model
+	});
+
+	// Each model analyzes ALL batches, then synthesizes
+	const modelResults = await Promise.all(
+		models.map(async (model) => {
+			// Analyze all batches with this model
+			const batchAnalyses = await Promise.all(
+				batchContents.map(async (batch) => {
+					try {
+						const response = await client.tpsAuditBatch(
+							batch.content,
+							model,
+							batch.batchIndex,
+							batches.length,
+							{ focusAreas, repoName },
+						);
+						return {
+							batchIndex: batch.batchIndex,
+							tokenCount: batch.tokenEstimate,
+							rawResponse: response,
+							analysis: parseTpsAnalysis(response),
+						};
+					} catch (error) {
+						logger.error("Batch analysis failed", error, {
+							model,
+							batchIndex: batch.batchIndex,
+						});
+						return {
+							batchIndex: batch.batchIndex,
+							tokenCount: batch.tokenEstimate,
+							rawResponse:
+								error instanceof Error ? error.message : "Unknown error",
+							analysis: null,
+						};
+					}
+				}),
+			);
+
+			const successfulBatches = batchAnalyses.filter(
+				(b) => b.analysis !== null,
+			);
+
+			// Synthesize this model's batch results
+			let finalAnalysis: TpsAnalysis | null = null;
+			let finalResponse = "";
+
+			if (batchAnalyses.length > 1 && successfulBatches.length > 0) {
+				try {
+					finalResponse = await client.tpsAuditSynthesize(
+						batchAnalyses,
+						model,
+						repoName,
+					);
+					finalAnalysis = parseTpsAnalysis(finalResponse);
+				} catch (error) {
+					logger.error("Synthesis failed for model", error, { model });
+					const first = successfulBatches[0];
+					finalAnalysis = first?.analysis ?? null;
+					finalResponse = first?.rawResponse ?? "";
+				}
+			} else if (successfulBatches.length === 1) {
+				const first = successfulBatches[0];
+				if (first) {
+					finalAnalysis = first.analysis;
+					finalResponse = first.rawResponse;
+				}
+			}
+
+			return {
+				model,
+				review: finalResponse,
+				analysis: finalAnalysis,
+				error:
+					finalAnalysis === null ? "Failed to produce analysis" : undefined,
+			};
+		}),
+	);
+
+	// Build results from all models
+	const results: ModelReviewResult[] = modelResults.map((r) => ({
+		model: r.model,
+		review: r.review,
+		error: r.error,
+	}));
+
+	// Use first successful analysis as the primary analysis for the report
+	const firstSuccess = modelResults.find((r) => r.analysis !== null);
+
+	logger.info("Batched TPS audit complete", {
+		modelsUsed: models.length,
+		batchesPerModel: batches.length,
+		successfulModels: modelResults.filter((r) => r.analysis !== null).length,
+	});
+
+	return {
+		results,
+		analysis: firstSuccess?.analysis ?? null,
 	};
 }
 
