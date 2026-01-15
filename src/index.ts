@@ -13,7 +13,9 @@ import {
 	DISCUSSION_MODELS,
 	FRONTEND_REVIEW_MODELS,
 	PLAN_REVIEW_MODELS,
+	TPS_AUDIT_MODELS,
 } from "./config";
+import { formatError } from "./errors";
 import { logger } from "./logger";
 import { ReviewClient } from "./review-client";
 import { InMemorySessionStore } from "./session/in-memory-store";
@@ -35,6 +37,11 @@ import {
 } from "./tools/review-frontend";
 import { gitReviewSchema, handleGitReview } from "./tools/review-git";
 import { handlePlanReview, planReviewSchema } from "./tools/review-plan";
+import {
+	formatTpsAuditResults,
+	handleTpsAudit,
+	tpsAuditSchema,
+} from "./tools/tps-audit";
 
 // Validate API key
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -98,6 +105,50 @@ createReviewTool(server, {
 	handler: (input) => handleGitReview(client, CODE_REVIEW_MODELS, input),
 });
 
+// Register TPS audit tool (custom handler for HTML/JSON output)
+server.registerTool(
+	"tps_audit",
+	{
+		description:
+			"Toyota Production System audit - analyze a codebase for flow, waste, bottlenecks, and quality. " +
+			"Scans the repository, identifies entry points, maps data flow, and provides actionable recommendations. " +
+			"Outputs interactive HTML report by default, or markdown/JSON.",
+		inputSchema: tpsAuditSchema,
+	},
+	async (input: Record<string, unknown>) => {
+		try {
+			logger.debug("Starting tps_audit", {
+				inputKeys: Object.keys(input),
+			});
+
+			const result = await handleTpsAudit(client, TPS_AUDIT_MODELS, input);
+			const formattedOutput = formatTpsAuditResults(result);
+
+			logger.info("Completed tps_audit", {
+				modelCount: result.models.length,
+				filesScanned: result.scanResult.files.length,
+				outputFormat: result.outputFormat,
+				hasAnalysis: !!result.analysis,
+			});
+
+			return {
+				content: [
+					{
+						type: "text" as const,
+						text: formattedOutput,
+					},
+				],
+			};
+		} catch (error) {
+			logger.error(
+				"Error in tps_audit",
+				error instanceof Error ? error : new Error(String(error)),
+			);
+			return formatError(error);
+		}
+	},
+);
+
 // Register config tool
 server.registerTool(
 	"list_review_config",
@@ -147,6 +198,7 @@ async function main() {
 		backendReviewModels: BACKEND_REVIEW_MODELS,
 		planReviewModels: PLAN_REVIEW_MODELS,
 		discussionModels: DISCUSSION_MODELS,
+		tpsAuditModels: TPS_AUDIT_MODELS,
 	});
 }
 

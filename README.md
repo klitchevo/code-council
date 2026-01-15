@@ -19,6 +19,7 @@ An MCP (Model Context Protocol) server that provides AI-powered code review usin
 - 📋 **Plan Review** - Review implementation plans before writing code
 - 📝 **Git Changes Review** - Review staged, unstaged, branch diffs, or specific commits
 - 💬 **Council Discussions** - Multi-turn conversations with the AI council for deeper exploration
+- 🏭 **TPS Audit** - Toyota Production System analysis for flow, waste, bottlenecks, and quality
 - ⚡ **Parallel Execution** - All models run concurrently for fast results
 
 ## Quick Start
@@ -284,6 +285,46 @@ Use discuss_with_council with session_id=<id-from-previous-response> to ask: Can
 - Rate limited to 10 requests per minute per session
 - Context windowing keeps conversations efficient
 
+### `tps_audit`
+
+Analyze any codebase using Toyota Production System (TPS) principles. Generates beautiful HTML reports with scores for flow, waste, bottlenecks, and quality.
+
+**Parameters:**
+- `path` (optional): Path to repository root (auto-detects git root if not provided)
+- `focus_areas` (optional): Specific areas to focus on (e.g., `["flow", "security", "performance"]`)
+- `max_files` (optional): Maximum files to analyze (default: 50, max: 100)
+- `file_types` (optional): File extensions to include (default: common source files)
+- `include_sensitive` (optional): Include potentially sensitive files (default: false)
+- `output_format` (optional): `html`, `markdown`, or `json` (default: `html`)
+
+**Example usage in Claude:**
+```
+Use tps_audit to analyze this repository
+```
+
+```
+Use tps_audit with output_format=markdown and focus_areas=["security", "performance"]
+```
+
+**What it analyzes:**
+- **Flow**: How data and control flow through the system, entry points, pathways
+- **Muda (Waste)**: The 7 wastes - defects, overproduction, waiting, transportation, inventory, motion, extra-processing
+- **Bottlenecks**: Where flow is constrained, severity and impact
+- **Jidoka**: Built-in quality, fail-fast patterns, error handling
+- **Recommendations**: Prioritized improvements with effort/impact ratings
+
+**Security features:**
+- Automatically skips sensitive files (`.env`, credentials, keys, tokens)
+- Scans file contents for embedded secrets (AWS keys, GitHub PATs, etc.)
+- Validates paths to prevent directory traversal attacks
+- Enforces size limits to prevent resource exhaustion
+
+**Output:**
+Reports are saved to `.code-council/` directory:
+- `tps-audit.html` - Interactive styled report with glass-morphism dark theme
+- `tps-audit.md` - Markdown version
+- `tps-audit.json` - Raw JSON data
+
 ### `list_review_config`
 
 Show which AI models are currently configured for each review type.
@@ -300,6 +341,7 @@ You can customize which AI models are used for reviews by setting environment va
 - `BACKEND_REVIEW_MODELS` - Models for backend reviews
 - `PLAN_REVIEW_MODELS` - Models for plan reviews
 - `DISCUSSION_MODELS` - Models for council discussions
+- `TPS_AUDIT_MODELS` - Models for TPS codebase audits
 - `TEMPERATURE` - Control response randomness (0.0-2.0, default: 0.3)
 - `MAX_TOKENS` - Maximum response tokens (default: 16384)
 

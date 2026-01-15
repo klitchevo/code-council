@@ -2,6 +2,9 @@
  * Tool factory for creating MCP review tools with consistent error handling
  */
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { z } from "zod";
 import { formatError } from "../errors";
@@ -20,6 +23,11 @@ type MCPToolResponse = {
 };
 
 /**
+ * Output format options
+ */
+export type OutputFormat = "markdown" | "html" | "json";
+
+/**
  * Format review results into a readable markdown string
  */
 function formatResults(results: ModelReviewResult[]): string {
@@ -31,6 +39,77 @@ function formatResults(results: ModelReviewResult[]): string {
 			return `## Review from \`${r.model}\`\n\n${r.review}`;
 		})
 		.join("\n\n---\n\n");
+}
+
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+export function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+}
+
+/**
+ * Format results as HTML using a template
+ */
+export function formatResultsAsHtml(
+	results: ModelReviewResult[],
+	templatePath: string,
+	data: {
+		analysis?: unknown;
+		repoName?: string;
+	} = {},
+): string {
+	try {
+		// Read template file
+		let template = readFileSync(templatePath, "utf-8");
+
+		// Prepare model perspectives
+		const modelPerspectives = results.map((r) => ({
+			model: r.model,
+			content: r.error ? `Error: ${r.error}` : r.review,
+			hasError: !!r.error,
+		}));
+
+		// Prepare report data
+		const reportData = {
+			analysis: data.analysis || null,
+			repoName: data.repoName || "Unknown Repository",
+			modelPerspectives,
+			generatedAt: new Date().toISOString(),
+		};
+
+		// Inject data into template (replace placeholder)
+		template = template.replace(
+			"{{REPORT_DATA}}",
+			JSON.stringify(reportData, null, 2),
+		);
+
+		return template;
+	} catch (error) {
+		logger.error("Failed to generate HTML report", error);
+		// Fallback to markdown
+		return formatResults(results);
+	}
+}
+
+/**
+ * Get the templates directory path
+ */
+export function getTemplatesDir(): string {
+	// Handle both ESM and CommonJS environments
+	try {
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = dirname(__filename);
+		return join(__dirname, "..", "..", "templates");
+	} catch {
+		// Fallback for CommonJS
+		return join(process.cwd(), "templates");
+	}
 }
 
 /**

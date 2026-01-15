@@ -105,3 +105,12 @@ export const DISCUSSION_MODELS: string[] = parseModels(
 	process.env.DISCUSSION_MODELS as string | string[] | undefined,
 	DEFAULT_MODELS,
 );
+
+/**
+ * Models to use for TPS (Toyota Production System) audits (runs in parallel)
+ * Analyzes codebases for flow, waste, bottlenecks using TPS principles
+ */
+export const TPS_AUDIT_MODELS: string[] = parseModels(
+	process.env.TPS_AUDIT_MODELS as string | string[] | undefined,
+	DEFAULT_MODELS,
+);

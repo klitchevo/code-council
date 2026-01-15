@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src https://fonts.gstatic.com https://fonts.googleapis.com">
+  <title>TPS Audit Report | Code Council</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-void: hsl(240, 20%, 3%);
+      --bg-deep: hsl(240, 18%, 6%);
+      --bg-surface: hsla(240, 15%, 12%, 0.6);
+      --bg-raised: hsla(240, 12%, 18%, 0.5);
+      --bg-hover: hsla(240, 12%, 25%, 0.6);
+
+      --text-bright: hsl(0, 0%, 98%);
+      --text-primary: hsl(240, 10%, 88%);
+      --text-secondary: hsl(240, 8%, 60%);
+      --text-muted: hsl(240, 8%, 55%);
+
+      --accent-hot: hsl(350, 90%, 62%);
+      --accent-warm: hsl(28, 100%, 58%);
+      --accent-electric: hsl(265, 95%, 68%);
+      --accent-cyan: hsl(185, 85%, 55%);
+      --accent-success: hsl(160, 80%, 48%);
+
+      --glass-white: rgba(255, 255, 255, 0.06);
+      --glass-white-border: rgba(255, 255, 255, 0.1);
+      --glass-white-strong: rgba(255, 255, 255, 0.12);
+      --glass-blur: blur(12px);
+      --glass-shadow-md: 0 8px 32px rgba(0, 0, 0, 0.25);
+      --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.3);
+
+      --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+      --severity-critical: hsl(350, 90%, 55%);
+      --severity-high: hsl(28, 100%, 55%);
+      --severity-medium: hsl(45, 100%, 50%);
+      --severity-low: hsl(200, 80%, 55%);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    body {
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    ::selection {
+      background: var(--accent-electric);
+      color: var(--bg-void);
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-deep);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-raised);
+      border-radius: 4px;
+    }
+
+    .bg-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .bg-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(150px);
+      opacity: 0.2;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .bg-blob {
+        animation: blobFloat 30s ease-in-out infinite;
+      }
+    }
+
+    .bg-blob-1 {
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(135deg, var(--accent-electric), hsl(290, 90%, 50%));
+      top: -200px;
+      right: -150px;
+    }
+
+    .bg-blob-2 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(135deg, var(--accent-cyan), hsl(200, 90%, 50%));
+      bottom: 20%;
+      left: -150px;
+      animation-delay: -10s;
+    }
+
+    @keyframes blobFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(30px, -30px) scale(1.05); }
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 3rem 0;
+      border-bottom: 1px solid var(--glass-white-border);
+      margin-bottom: 2rem;
+    }
+
+    .header-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 0.5rem;
+    }
+
+    .header .subtitle {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    .header .repo-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-white-border);
+      border-radius: 50px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+    }
+
+    /* Score Cards */
+    .scores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .score-card {
+      background: var(--glass-white);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-white-border);
+      border-radius: 24px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .score-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--glass-shadow-md);
+    }
+
+    .score-card.main {
+      grid-column: 1 / -1;
+      padding: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .score-card.main {
+        grid-column: span 2;
+      }
+    }
+
+    .score-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    .score-gauge {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 1rem;
+    }
+
+    .score-card.main .score-gauge {
+      width: 160px;
+      height: 160px;
+    }
+
+    .score-ring {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--gauge-color, var(--accent-electric)) calc(var(--score, 0) * 1%),
+        var(--bg-raised) 0
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-ring::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      background: var(--bg-void);
+      border-radius: 50%;
+    }
+
+    .score-value {
+      position: relative;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      z-index: 1;
+    }
+
+    .score-card.main .score-value {
+      font-size: 3rem;
+    }
+
+    /* Sections */
+    .section {
+      background: var(--glass-white);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-white-border);
+      border-radius: 24px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--glass-white-border);
+    }
+
+    .section-icon {
+      font-size: 1.25rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    .section-content {
+      padding: 1.5rem;
+    }
+
+    /* Details/Summary for collapsible items */
+    details {
+      margin-bottom: 1rem;
+    }
+
+    details:last-child {
+      margin-bottom: 0;
+    }
+
+    summary {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg-raised);
+      border: 1px solid var(--glass-white-border);
+      border-radius: 12px;
+      cursor: pointer;
+      list-style: none;
+      transition: background 0.2s ease;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary:hover {
+      background: var(--bg-hover);
+    }
+
+    summary::before {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 6px solid var(--text-secondary);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      transition: transform 0.2s ease;
+    }
+
+    details[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    .details-content {
+      padding: 1rem 1.25rem;
+      margin-top: 0.5rem;
+      background: var(--bg-surface);
+      border-radius: 12px;
+      font-size: 0.95rem;
+    }
+
+    /* Severity badges */
+    .severity-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .severity-critical {
+      background: hsla(350, 90%, 55%, 0.2);
+      color: var(--severity-critical);
+    }
+
+    .severity-high {
+      background: hsla(28, 100%, 55%, 0.2);
+      color: var(--severity-high);
+    }
+
+    .severity-medium {
+      background: hsla(45, 100%, 50%, 0.2);
+      color: var(--severity-medium);
+    }
+
+    .severity-low {
+      background: hsla(200, 80%, 55%, 0.2);
+      color: var(--severity-low);
+    }
+
+    /* Item cards */
+    .item-title {
+      flex: 1;
+      font-weight: 500;
+      color: var(--text-bright);
+    }
+
+    .item-location {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent-cyan);
+    }
+
+    .item-description {
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .item-suggestion {
+      padding: 0.75rem 1rem;
+      background: hsla(160, 80%, 48%, 0.1);
+      border-left: 3px solid var(--accent-success);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+    }
+
+    .item-suggestion strong {
+      color: var(--accent-success);
+    }
+
+    /* Tabs */
+    .tabs {
+      margin-top: 1rem;
+    }
+
+    .tab-list {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0 1.5rem;
+      border-bottom: 1px solid var(--glass-white-border);
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      padding: 0.75rem 1.25rem;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-button:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: var(--accent-electric);
+      border-bottom-color: var(--accent-electric);
+    }
+
+    .tab-button:focus-visible {
+      outline: 2px solid var(--accent-electric);
+      outline-offset: 2px;
+    }
+
+    .tab-panel {
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .tab-panel pre {
+      background: var(--bg-deep);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    /* Flow diagram */
+    .flow-diagram {
+      background: var(--bg-deep);
+      padding: 1.5rem;
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      white-space: pre;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+
+    /* Lists */
+    .list {
+      list-style: none;
+    }
+
+    .list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--glass-white-border);
+    }
+
+    .list li:last-child {
+      border-bottom: none;
+    }
+
+    .list li::before {
+      content: '>';
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+    }
+
+    /* Summary section */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .summary-card {
+      padding: 1.25rem;
+      background: var(--bg-raised);
+      border-radius: 12px;
+    }
+
+    .summary-card h4 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .summary-card.strengths h4 { color: var(--accent-success); }
+    .summary-card.concerns h4 { color: var(--accent-warm); }
+    .summary-card.quickwins h4 { color: var(--accent-cyan); }
+
+    /* Waste categories */
+    .waste-category {
+      margin-bottom: 1.5rem;
+    }
+
+    .waste-category:last-child {
+      margin-bottom: 0;
+    }
+
+    .waste-category-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--glass-white-border);
+    }
+
+    .waste-category-header h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+
+    .waste-count {
+      background: var(--accent-hot);
+      color: white;
+      padding: 0.125rem 0.5rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* Effort badges */
+    .effort-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      margin-top: 2rem;
+      border-top: 1px solid var(--glass-white-border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .footer a {
+      color: var(--accent-electric);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Copy button */
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--glass-white);
+      border: 1px solid var(--glass-white-border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: var(--glass-white-strong);
+      color: var(--text-primary);
+    }
+
+    .copy-btn.copied {
+      background: hsla(160, 80%, 48%, 0.2);
+      border-color: var(--accent-success);
+      color: var(--accent-success);
+    }
+
+    /* Print styles */
+    @media print {
+      .bg-gradient {
+        display: none;
+      }
+
+      body {
+        background: white;
+        color: black;
+      }
+
+      .section, .score-card, .summary-card, details {
+        break-inside: avoid;
+      }
+
+      details {
+        display: block !important;
+      }
+
+      details[open] summary ~ * {
+        display: block !important;
+      }
+    }
+
+    /* Accessibility: Focus styles */
+    :focus-visible {
+      outline: 2px solid var(--accent-electric);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient">
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+  </div>
+
+  <main class="container">
+    <header class="header">
+      <div class="header-icon">🏭</div>
+      <h1>TPS Audit Report</h1>
+      <p class="subtitle">Toyota Production System Analysis by Code Council</p>
+      <div class="repo-name" id="repo-name">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span id="repo-path">repository</span>
+      </div>
+    </header>
+
+    <!-- Scores Section -->
+    <section class="scores-grid" aria-label="Audit Scores">
+      <div class="score-card main">
+        <div class="score-label">Overall Score</div>
+        <div class="score-gauge" role="meter" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Overall Score">
+          <div class="score-ring" style="--score: 0; --gauge-color: var(--accent-electric)">
+            <span class="score-value" id="score-overall">--</span>
+          </div>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">Flow</div>
+        <div class="score-gauge" role="meter" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Flow Score">
+          <div class="score-ring" style="--score: 0; --gauge-color: var(--accent-cyan)">
+            <span class="score-value" id="score-flow">--</span>
+          </div>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">Waste Efficiency</div>
+        <div class="score-gauge" role="meter" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Waste Score">
+          <div class="score-ring" style="--score: 0; --gauge-color: var(--accent-success)">
+            <span class="score-value" id="score-waste">--</span>
+          </div>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">Quality</div>
+        <div class="score-gauge" role="meter" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Quality Score">
+          <div class="score-ring" style="--score: 0; --gauge-color: var(--accent-warm)">
+            <span class="score-value" id="score-quality">--</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary Section -->
+    <section class="section" aria-labelledby="summary-title">
+      <div class="section-header">
+        <span class="section-icon">📋</span>
+        <h2 class="section-title" id="summary-title">Executive Summary</h2>
+      </div>
+      <div class="section-content">
+        <div class="summary-grid">
+          <div class="summary-card strengths">
+            <h4>✓ Strengths</h4>
+            <ul class="list" id="summary-strengths"></ul>
+          </div>
+          <div class="summary-card concerns">
+            <h4>⚠ Concerns</h4>
+            <ul class="list" id="summary-concerns"></ul>
+          </div>
+          <div class="summary-card quickwins">
+            <h4>⚡ Quick Wins</h4>
+            <ul class="list" id="summary-quickwins"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Flow Analysis Section -->
+    <section class="section" aria-labelledby="flow-title">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <h2 class="section-title" id="flow-title">Flow Analysis</h2>
+      </div>
+      <div class="section-content">
+        <h3 style="margin-bottom: 1rem; color: var(--text-bright);">Flow Diagram</h3>
+        <div class="flow-diagram" id="flow-diagram"></div>
+
+        <h3 style="margin: 1.5rem 0 1rem; color: var(--text-bright);">Entry Points</h3>
+        <ul class="list" id="flow-entrypoints"></ul>
+
+        <h3 style="margin: 1.5rem 0 1rem; color: var(--text-bright);">Key Pathways</h3>
+        <ul class="list" id="flow-pathways"></ul>
+      </div>
+    </section>
+
+    <!-- Bottlenecks Section -->
+    <section class="section" aria-labelledby="bottlenecks-title">
+      <div class="section-header">
+        <span class="section-icon">🚧</span>
+        <h2 class="section-title" id="bottlenecks-title">Bottlenecks Identified</h2>
+      </div>
+      <div class="section-content" id="bottlenecks-list"></div>
+    </section>
+
+    <!-- Waste Section -->
+    <section class="section" aria-labelledby="waste-title">
+      <div class="section-header">
+        <span class="section-icon">🗑️</span>
+        <h2 class="section-title" id="waste-title">Waste Identification (Muda)</h2>
+      </div>
+      <div class="section-content" id="waste-list"></div>
+    </section>
+
+    <!-- Jidoka Section -->
+    <section class="section" aria-labelledby="jidoka-title">
+      <div class="section-header">
+        <span class="section-icon">🛡️</span>
+        <h2 class="section-title" id="jidoka-title">Built-in Quality (Jidoka)</h2>
+      </div>
+      <div class="section-content">
+        <div class="summary-grid">
+          <div class="summary-card strengths">
+            <h4>✓ Strengths</h4>
+            <ul class="list" id="jidoka-strengths"></ul>
+          </div>
+          <div class="summary-card concerns">
+            <h4>⚠ Weaknesses</h4>
+            <ul class="list" id="jidoka-weaknesses"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recommendations Section -->
+    <section class="section" aria-labelledby="recommendations-title">
+      <div class="section-header">
+        <span class="section-icon">✅</span>
+        <h2 class="section-title" id="recommendations-title">Recommendations</h2>
+      </div>
+      <div class="section-content" id="recommendations-list"></div>
+    </section>
+
+    <!-- Model Perspectives Section -->
+    <section class="section" aria-labelledby="models-title">
+      <div class="section-header">
+        <span class="section-icon">🤖</span>
+        <h2 class="section-title" id="models-title">Model Perspectives</h2>
+      </div>
+      <div class="tabs">
+        <div class="tab-list" role="tablist" aria-label="Model perspectives" id="model-tabs"></div>
+        <div id="model-panels"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Generated by <a href="https://github.com/klitchevo/code-council" target="_blank" rel="noopener">Code Council</a></p>
+      <p style="margin-top: 0.5rem;">Toyota Production System Audit • <span id="generated-date"></span></p>
+    </footer>
+  </main>
+
+  <script>
+    // TPS Report data will be injected here
+    const REPORT_DATA = {{REPORT_DATA}};
+
+    // Helper functions
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function createListItem(text) {
+      const li = document.createElement('li');
+      li.textContent = text;
+      return li;
+    }
+
+    function animateScore(element, targetScore, gaugeElement) {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        element.textContent = targetScore;
+        gaugeElement.style.setProperty('--score', targetScore);
+        gaugeElement.parentElement.setAttribute('aria-valuenow', targetScore);
+        return;
+      }
+
+      let current = 0;
+      const duration = 1000;
+      const start = performance.now();
+
+      function update(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        current = Math.round(eased * targetScore);
+
+        element.textContent = current;
+        gaugeElement.style.setProperty('--score', current);
+        gaugeElement.parentElement.setAttribute('aria-valuenow', current);
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    function getSeverityClass(severity) {
+      return `severity-${severity}`;
+    }
+
+    function createBottleneckItem(bottleneck) {
+      const details = document.createElement('details');
+
+      const summary = document.createElement('summary');
+      summary.innerHTML = `
+        <span class="severity-badge ${getSeverityClass(bottleneck.severity)}">${escapeHtml(bottleneck.severity)}</span>
+        <span class="item-title">${escapeHtml(bottleneck.title)}</span>
+        <span class="item-location">${escapeHtml(bottleneck.location)}</span>
+      `;
+
+      const content = document.createElement('div');
+      content.className = 'details-content';
+      content.innerHTML = `
+        <p class="item-description">${escapeHtml(bottleneck.description)}</p>
+        <p style="margin-bottom: 0.5rem;"><strong>Impact:</strong> ${escapeHtml(bottleneck.impact)}</p>
+        <div class="item-suggestion">
+          <strong>Suggestion:</strong> ${escapeHtml(bottleneck.suggestion)}
+        </div>
+      `;
+
+      details.appendChild(summary);
+      details.appendChild(content);
+      return details;
+    }
+
+    function createRecommendationItem(rec, index) {
+      const details = document.createElement('details');
+      if (index === 0) details.open = true;
+
+      const impactColors = {
+        critical: 'var(--severity-critical)',
+        high: 'var(--severity-high)',
+        medium: 'var(--severity-medium)',
+        low: 'var(--severity-low)'
+      };
+
+      const summary = document.createElement('summary');
+      summary.innerHTML = `
+        <span style="background: ${impactColors[rec.impact]}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">P${rec.priority}</span>
+        <span class="item-title">${escapeHtml(rec.title)}</span>
+        <span class="effort-badge">${escapeHtml(rec.effort)} effort</span>
+      `;
+
+      const content = document.createElement('div');
+      content.className = 'details-content';
+      content.innerHTML = `
+        <p class="item-description">${escapeHtml(rec.description)}</p>
+        <p><strong>Category:</strong> ${escapeHtml(rec.category)} • <strong>Impact:</strong> ${escapeHtml(rec.impact)}</p>
+      `;
+
+      details.appendChild(summary);
+      details.appendChild(content);
+      return details;
+    }
+
+    function createWasteCategory(type, items) {
+      const wasteLabels = {
+        defects: { name: 'Defects', icon: '🐛' },
+        overproduction: { name: 'Overproduction', icon: '📦' },
+        waiting: { name: 'Waiting', icon: '⏳' },
+        non_utilized_talent: { name: 'Non-utilized Talent', icon: '🤖' },
+        transportation: { name: 'Transportation', icon: '🚚' },
+        inventory: { name: 'Inventory', icon: '📚' },
+        motion: { name: 'Motion', icon: '🔄' },
+        extra_processing: { name: 'Extra Processing', icon: '⚙️' }
+      };
+
+      const label = wasteLabels[type] || { name: type, icon: '❓' };
+
+      const div = document.createElement('div');
+      div.className = 'waste-category';
+
+      div.innerHTML = `
+        <div class="waste-category-header">
+          <span>${label.icon}</span>
+          <h4>${escapeHtml(label.name)}</h4>
+          <span class="waste-count">${items.length}</span>
+        </div>
+      `;
+
+      items.forEach(item => {
+        const details = document.createElement('details');
+
+        const summary = document.createElement('summary');
+        summary.innerHTML = `
+          <span class="item-title">${escapeHtml(item.description.substring(0, 80))}${item.description.length > 80 ? '...' : ''}</span>
+          <span class="item-location">${escapeHtml(item.location)}</span>
+          <span class="effort-badge">${escapeHtml(item.effort)}</span>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'details-content';
+        content.innerHTML = `
+          <p class="item-description">${escapeHtml(item.description)}</p>
+          <div class="item-suggestion">
+            <strong>Suggestion:</strong> ${escapeHtml(item.suggestion)}
+          </div>
+        `;
+
+        details.appendChild(summary);
+        details.appendChild(content);
+        div.appendChild(details);
+      });
+
+      return div;
+    }
+
+    function initTabs() {
+      const tabList = document.getElementById('model-tabs');
+      const panels = document.getElementById('model-panels');
+
+      if (!REPORT_DATA.modelPerspectives || REPORT_DATA.modelPerspectives.length === 0) {
+        tabList.innerHTML = '<p style="padding: 1rem; color: var(--text-muted);">No model perspectives available.</p>';
+        return;
+      }
+
+      REPORT_DATA.modelPerspectives.forEach((perspective, index) => {
+        const button = document.createElement('button');
+        button.className = 'tab-button';
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+        button.setAttribute('aria-controls', `panel-${index}`);
+        button.setAttribute('id', `tab-${index}`);
+        button.textContent = perspective.model;
+        button.addEventListener('click', () => selectTab(index));
+        tabList.appendChild(button);
+
+        const panel = document.createElement('div');
+        panel.className = `tab-panel${index === 0 ? ' active' : ''}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('id', `panel-${index}`);
+        panel.setAttribute('aria-labelledby', `tab-${index}`);
+        panel.innerHTML = `<pre>${escapeHtml(perspective.content)}</pre>`;
+        panels.appendChild(panel);
+      });
+    }
+
+    function selectTab(index) {
+      const buttons = document.querySelectorAll('.tab-button');
+      const panels = document.querySelectorAll('.tab-panel');
+
+      buttons.forEach((btn, i) => {
+        btn.setAttribute('aria-selected', i === index ? 'true' : 'false');
+      });
+
+      panels.forEach((panel, i) => {
+        panel.classList.toggle('active', i === index);
+      });
+    }
+
+    // Initialize report
+    function initReport() {
+      if (!REPORT_DATA || !REPORT_DATA.analysis) {
+        document.querySelector('.container').innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-muted);">No report data available.</p>';
+        return;
+      }
+
+      const analysis = REPORT_DATA.analysis;
+
+      // Set repo name
+      if (REPORT_DATA.repoName) {
+        document.getElementById('repo-path').textContent = REPORT_DATA.repoName;
+      }
+
+      // Animate scores
+      setTimeout(() => {
+        animateScore(
+          document.getElementById('score-overall'),
+          analysis.scores.overall,
+          document.querySelector('.score-card.main .score-ring')
+        );
+        animateScore(
+          document.getElementById('score-flow'),
+          analysis.scores.flow,
+          document.querySelectorAll('.score-ring')[1]
+        );
+        animateScore(
+          document.getElementById('score-waste'),
+          analysis.scores.waste,
+          document.querySelectorAll('.score-ring')[2]
+        );
+        animateScore(
+          document.getElementById('score-quality'),
+          analysis.scores.quality,
+          document.querySelectorAll('.score-ring')[3]
+        );
+      }, 300);
+
+      // Summary
+      const strengthsList = document.getElementById('summary-strengths');
+      const concernsList = document.getElementById('summary-concerns');
+      const quickwinsList = document.getElementById('summary-quickwins');
+
+      analysis.summary.strengths.map(s => strengthsList.appendChild(createListItem(s)));
+      analysis.summary.concerns.map(c => concernsList.appendChild(createListItem(c)));
+      analysis.summary.quickWins.map(q => quickwinsList.appendChild(createListItem(q)));
+
+      // Flow analysis
+      document.getElementById('flow-diagram').textContent = analysis.flowAnalysis.diagram || 'No flow diagram generated.';
+
+      const entrypointsList = document.getElementById('flow-entrypoints');
+      analysis.flowAnalysis.entryPoints.map(ep => entrypointsList.appendChild(createListItem(ep)));
+
+      const pathwaysList = document.getElementById('flow-pathways');
+      analysis.flowAnalysis.pathways.map(p => pathwaysList.appendChild(createListItem(p)));
+
+      // Bottlenecks
+      const bottlenecksList = document.getElementById('bottlenecks-list');
+      if (analysis.bottlenecks.length === 0) {
+        bottlenecksList.innerHTML = '<p style="color: var(--accent-success);">No bottlenecks identified!</p>';
+      } else {
+        analysis.bottlenecks.map(b => bottlenecksList.appendChild(createBottleneckItem(b)));
+      }
+
+      // Waste
+      const wasteList = document.getElementById('waste-list');
+      const wasteTypes = Object.keys(analysis.waste || {});
+      if (wasteTypes.length === 0) {
+        wasteList.innerHTML = '<p style="color: var(--accent-success);">Minimal waste detected!</p>';
+      } else {
+        wasteTypes.forEach(type => {
+          if (analysis.waste[type] && analysis.waste[type].length > 0) {
+            wasteList.appendChild(createWasteCategory(type, analysis.waste[type]));
+          }
+        });
+      }
+
+      // Jidoka
+      const jidokaStrengths = document.getElementById('jidoka-strengths');
+      const jidokaWeaknesses = document.getElementById('jidoka-weaknesses');
+
+      if (analysis.jidoka) {
+        analysis.jidoka.strengths.map(s => jidokaStrengths.appendChild(createListItem(s)));
+        analysis.jidoka.weaknesses.map(w => jidokaWeaknesses.appendChild(createListItem(w)));
+      }
+
+      // Recommendations
+      const recsList = document.getElementById('recommendations-list');
+      const sortedRecs = [...analysis.recommendations].sort((a, b) => a.priority - b.priority);
+      sortedRecs.map((rec, i) => recsList.appendChild(createRecommendationItem(rec, i)));
+
+      // Model tabs
+      initTabs();
+
+      // Generated date
+      document.getElementById('generated-date').textContent = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // Run on load
+    document.addEventListener('DOMContentLoaded', initReport);
+  </script>
+</body>
+</html>

@@ -11,6 +11,7 @@ import * as backendReviewPrompts from "./prompts/backend-review";
 import * as codeReviewPrompts from "./prompts/code-review";
 import * as frontendReviewPrompts from "./prompts/frontend-review";
 import * as planReviewPrompts from "./prompts/plan-review";
+import * as tpsAuditPrompts from "./prompts/tps-audit";
 import { executeInParallel } from "./utils/parallel-executor";
 
 /**
@@ -317,5 +318,38 @@ export class ReviewClient {
 			const messages = getMessagesForModel(model);
 			return this.chatMultiTurn(model, messages);
 		});
+	}
+
+	/**
+	 * Perform TPS (Toyota Production System) audit on aggregated codebase content
+	 * Analyzes code for flow, waste, bottlenecks, and quality using TPS principles
+	 *
+	 * @param aggregatedContent - Aggregated file contents from repo scanner
+	 * @param models - Array of model identifiers to use
+	 * @param options - Optional configuration
+	 * @returns Array of TPS analysis results from each model
+	 */
+	async tpsAudit(
+		aggregatedContent: string,
+		models: string[],
+		options?: {
+			focusAreas?: string[];
+			repoName?: string;
+		},
+	): Promise<ModelReviewResult[]> {
+		const userMessage = tpsAuditPrompts.buildUserMessage(aggregatedContent, {
+			focusAreas: options?.focusAreas,
+			repoName: options?.repoName,
+		});
+
+		logger.debug("Starting TPS audit", {
+			contentLength: aggregatedContent.length,
+			modelCount: models.length,
+			focusAreas: options?.focusAreas,
+		});
+
+		return executeInParallel(models, (model) =>
+			this.chat(model, tpsAuditPrompts.SYSTEM_PROMPT, userMessage),
+		);
 	}
 }
