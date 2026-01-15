@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TpsAnalysis } from "../prompts/tps-audit";
 import type { ModelReviewResult } from "../review-client";
 import type { ScanResult } from "../utils/repo-scanner";
+import { formatResultsAsHtml } from "./factory";
 import { formatTpsAuditResults, type TpsAuditResult } from "./tps-audit";
 
 // Mock dependencies
@@ -76,7 +77,6 @@ describe("tps-audit tool", () => {
 				outputFormat: "html",
 			};
 
-			const { formatResultsAsHtml } = require("./factory");
 			formatTpsAuditResults(auditResult);
 
 			expect(formatResultsAsHtml).toHaveBeenCalled();
