@@ -189,11 +189,12 @@ export interface ScanResult {
 
 /**
  * Hard limits to prevent resource exhaustion
+ * These are high ceilings - users can set lower limits via options
  */
 const HARD_LIMITS = {
-	MAX_FILES: 100,
-	MAX_FILE_SIZE: 100 * 1024, // 100KB per file
-	MAX_TOTAL_SIZE: 1024 * 1024, // 1MB total
+	MAX_FILES: 10000,
+	MAX_FILE_SIZE: 1024 * 1024, // 1MB per file
+	MAX_TOTAL_SIZE: 50 * 1024 * 1024, // 50MB total
 };
 
 /**

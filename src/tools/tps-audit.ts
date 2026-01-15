@@ -2,6 +2,7 @@
  * TPS Audit tool - Toyota Production System analysis for codebases
  */
 
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { logger } from "../logger";
@@ -34,9 +35,8 @@ const tpsAuditSchemaObj = z.object({
 		.describe("Specific areas to focus on (e.g., 'performance', 'security')"),
 	max_files: z
 		.number()
-		.max(100)
 		.optional()
-		.describe("Maximum files to analyze (default: 50, max: 100)"),
+		.describe("Maximum files to analyze (default: 50)"),
 	file_types: z
 		.array(z.string())
 		.optional()
@@ -167,22 +167,54 @@ export async function handleTpsAudit(
 }
 
 /**
+ * Write audit report to .code-council folder in the scanned repo
+ */
+function writeReportToFolder(
+	repoRoot: string,
+	content: string,
+	format: OutputFormat,
+): string | null {
+	try {
+		const outputDir = join(repoRoot, ".code-council");
+		if (!existsSync(outputDir)) {
+			mkdirSync(outputDir, { recursive: true });
+		}
+
+		const ext = format === "json" ? "json" : format === "html" ? "html" : "md";
+		const filename = `tps-audit.${ext}`;
+		const filepath = join(outputDir, filename);
+		writeFileSync(filepath, content);
+
+		logger.info("TPS audit report written", { filepath });
+		return filepath;
+	} catch (err) {
+		logger.warn("Failed to write report to .code-council folder", {
+			error: err instanceof Error ? err.message : String(err),
+		});
+		return null;
+	}
+}
+
+/**
  * Format TPS audit results based on output format
  */
 export function formatTpsAuditResults(auditResult: TpsAuditResult): string {
 	const { results, scanResult, analysis, outputFormat } = auditResult;
 
+	let content: string;
+
 	switch (outputFormat) {
 		case "html": {
 			const templatePath = join(getTemplatesDir(), "tps-report.html");
-			return formatResultsAsHtml(results, templatePath, {
+			content = formatResultsAsHtml(results, templatePath, {
 				analysis,
 				repoName: scanResult.repoRoot.split("/").pop(),
 			});
+			break;
 		}
 
 		case "json": {
-			return JSON.stringify(
+			content = JSON.stringify(
 				{
 					analysis,
 					scanStats: scanResult.stats,
@@ -197,6 +229,7 @@ export function formatTpsAuditResults(auditResult: TpsAuditResult): string {
 				null,
 				2,
 			);
+			break;
 		}
 
 		case "markdown":
@@ -238,16 +271,31 @@ export function formatTpsAuditResults(auditResult: TpsAuditResult): string {
 			}
 
 			parts.push("\n## Model Perspectives\n");
-			results.forEach((r) => {
+			for (const r of results) {
 				if (r.error) {
 					parts.push(`\n### ${r.model}\n\n**Error:** ${r.error}\n`);
 				} else {
 					parts.push(`\n### ${r.model}\n\n${r.review}\n`);
 				}
 				parts.push("\n---\n");
-			});
+			}
 
-			return parts.join("");
+			content = parts.join("");
+			break;
 		}
 	}
+
+	// Write report to .code-council folder in the scanned repository
+	const filepath = writeReportToFolder(
+		scanResult.repoRoot,
+		content,
+		outputFormat,
+	);
+	if (filepath) {
+		// Prepend filepath info to content for user visibility
+		const fileNote = `\n\n---\n**Report saved to:** \`${filepath}\`\n`;
+		return content + fileNote;
+	}
+
+	return content;
 }
