@@ -320,6 +320,10 @@ export async function scanRepository(
 			options.maxTotalSize ?? DEFAULT_OPTIONS.maxTotalSize,
 			HARD_LIMITS.MAX_TOTAL_SIZE,
 		),
+		// Ensure fileTypes is never undefined
+		fileTypes: options.fileTypes ?? DEFAULT_OPTIONS.fileTypes,
+		skipSensitive: options.skipSensitive ?? DEFAULT_OPTIONS.skipSensitive,
+		detectSecrets: options.detectSecrets ?? DEFAULT_OPTIONS.detectSecrets,
 	};
 
 	// Find repository root
