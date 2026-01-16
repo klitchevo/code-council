@@ -11,6 +11,10 @@ export const codeReviewSchema = {
 	code: z.string().describe("The code to review"),
 	language: z.string().optional().describe("Programming language of the code"),
 	context: z.string().optional().describe("Additional context about the code"),
+	output_format: z
+		.enum(["markdown", "json", "html"])
+		.optional()
+		.describe("Output format for the review (default: markdown)"),
 };
 
 export async function handleCodeReview(

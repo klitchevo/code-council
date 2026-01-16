@@ -1,5 +1,9 @@
 /**
  * Tool factory for creating MCP review tools with consistent error handling
+ *
+ * All review tools use host extraction mode by default, which formats results
+ * for the MCP host model (e.g., Claude) to analyze. This is more efficient
+ * than making additional API calls for extraction.
  */
 
 import { readFileSync } from "node:fs";
@@ -7,14 +11,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { z } from "zod";
-import { buildConsensus } from "../consensus";
-import type {
-	OutputFormat as ConsensusFormat,
-	ConsensusOptions,
-} from "../consensus/types";
+import { formatForHostExtraction } from "../consensus/builder";
+import type { OutputFormat as ConsensusFormat } from "../consensus/types";
 import { formatError } from "../errors";
 import { logger } from "../logger";
-import type { ModelReviewResult, ReviewClient } from "../review-client";
+import type { ModelReviewResult } from "../review-client";
 
 /**
  * MCP tool response type
@@ -118,7 +119,9 @@ export function getTemplatesDir(): string {
 }
 
 /**
- * Create a review tool with consistent error handling and logging
+ * Create a review tool with consistent error handling and logging.
+ * All review tools use host extraction mode by default, formatting results
+ * for the MCP host model to analyze and synthesize.
  */
 export function createReviewTool(
 	server: McpServer,
@@ -145,23 +148,28 @@ export function createReviewTool(
 					inputKeys: Object.keys(input),
 				});
 
-				const { results, models, reviewType } = await config.handler(input);
+				const { results, models } = await config.handler(input);
+
+				// Get output format from input if provided
+				const outputFormat =
+					(input.output_format as ConsensusFormat) ?? "markdown";
 
 				logger.info(`Completed ${config.name}`, {
 					modelCount: models.length,
 					successCount: results.filter((r) => !r.error).length,
 					errorCount: results.filter((r) => r.error).length,
+					outputFormat,
 				});
 
-				const title = reviewType
-					? `# ${config.name.replace("review_", "").replace("_", " ")} Review - ${reviewType} (${models.length} models)`
-					: `# ${config.name.replace("review_", "").replace("_", " ")} Review Results (${models.length} models)`;
+				// Use host extraction format for all reviews
+				// This provides a structured format that the MCP host model can analyze
+				const { formatted } = formatForHostExtraction(results, outputFormat);
 
 				return {
 					content: [
 						{
 							type: "text" as const,
-							text: `${title}\n\n${formatResults(results)}`,
+							text: formatted,
 						},
 					],
 				} satisfies MCPToolResponse;
@@ -177,24 +185,19 @@ export function createReviewTool(
 }
 
 /**
- * Create a consensus-enabled review tool
- * Runs standard reviews then applies consensus analysis
+ * @deprecated Use createReviewTool instead. All review tools now use host extraction by default.
+ *
+ * This function is kept for backwards compatibility but simply delegates to createReviewTool.
+ * The consensus analysis is now always enabled via host extraction mode.
  */
 export function createConsensusReviewTool(
 	server: McpServer,
-	reviewClient: ReviewClient,
+	_reviewClient: unknown,
 	config: {
 		name: string;
 		description: string;
 		inputSchema: Record<string, z.ZodType<unknown>>;
-		consensusConfig: {
-			enabled: boolean;
-			modelWeights: Record<string, number>;
-			highConfidenceThreshold: number;
-			moderateConfidenceThreshold: number;
-			extractionModel: string;
-			fallbackOnError: boolean;
-		};
+		consensusConfig?: unknown;
 		handler: (input: Record<string, unknown>) => Promise<{
 			results: ModelReviewResult[];
 			models: string[];
@@ -202,98 +205,15 @@ export function createConsensusReviewTool(
 		}>;
 	},
 ): void {
-	server.registerTool(
-		config.name,
-		{
-			description: config.description,
-			inputSchema: config.inputSchema,
-		},
-		async (input: Record<string, unknown>) => {
-			try {
-				logger.debug(`Starting ${config.name} with consensus`, {
-					inputKeys: Object.keys(input),
-				});
-
-				// Run standard reviews
-				const { results, models, reviewType } = await config.handler(input);
-
-				// Get output format from input if provided
-				const outputFormat =
-					(input.output_format as ConsensusFormat) ?? "markdown";
-
-				logger.info(`Reviews complete, running consensus analysis`, {
-					modelCount: models.length,
-					successCount: results.filter((r) => !r.error).length,
-				});
-
-				// Run consensus analysis
-				const consensusOptions: ConsensusOptions = {
-					modelWeights: config.consensusConfig.modelWeights,
-					highConfidenceThreshold:
-						config.consensusConfig.highConfidenceThreshold,
-					moderateConfidenceThreshold:
-						config.consensusConfig.moderateConfidenceThreshold,
-					extractionModel: config.consensusConfig.extractionModel,
-					outputFormat,
-				};
-
-				try {
-					const { report, formatted } = await buildConsensus(
-						results,
-						reviewClient,
-						consensusOptions,
-					);
-
-					logger.info(`Completed ${config.name} with consensus`, {
-						totalFindings: report.totalFindings,
-						highConfidence: report.highConfidence.length,
-						disagreements: report.disagreements.length,
-						executionMs: report.executionTimeMs,
-					});
-
-					return {
-						content: [
-							{
-								type: "text" as const,
-								text: formatted,
-							},
-						],
-					} satisfies MCPToolResponse;
-				} catch (consensusError) {
-					// If consensus fails and fallback is enabled, return raw results
-					if (config.consensusConfig.fallbackOnError) {
-						logger.warn(
-							"Consensus analysis failed, falling back to raw results",
-							{
-								error:
-									consensusError instanceof Error
-										? consensusError.message
-										: String(consensusError),
-							},
-						);
-
-						const title = reviewType
-							? `# ${config.name.replace("review_", "").replace("_", " ")} Review - ${reviewType} (${models.length} models)\n\n*Note: Consensus analysis failed, showing raw results*`
-							: `# ${config.name.replace("review_", "").replace("_", " ")} Review Results (${models.length} models)\n\n*Note: Consensus analysis failed, showing raw results*`;
-
-						return {
-							content: [
-								{
-									type: "text" as const,
-									text: `${title}\n\n${formatResults(results)}`,
-								},
-							],
-						} satisfies MCPToolResponse;
-					}
-					throw consensusError;
-				}
-			} catch (error) {
-				logger.error(
-					`Error in ${config.name}`,
-					error instanceof Error ? error : new Error(String(error)),
-				);
-				return formatError(error);
-			}
-		},
+	logger.warn(
+		`createConsensusReviewTool is deprecated. Use createReviewTool instead. Tool "${config.name}" will use host extraction mode.`,
 	);
+
+	// Delegate to the unified createReviewTool
+	createReviewTool(server, {
+		name: config.name,
+		description: config.description,
+		inputSchema: config.inputSchema,
+		handler: config.handler,
+	});
 }

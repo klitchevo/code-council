@@ -18,6 +18,10 @@ export const backendReviewSchema = {
 		.optional()
 		.describe("Type of review to perform (default: full)"),
 	context: z.string().optional().describe("Additional context"),
+	output_format: z
+		.enum(["markdown", "json", "html"])
+		.optional()
+		.describe("Output format for the review (default: markdown)"),
 };
 
 export async function handleBackendReview(

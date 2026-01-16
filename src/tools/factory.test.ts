@@ -61,7 +61,7 @@ describe("factory", () => {
 			expect(typeof call?.[2]).toBe("function");
 		});
 
-		it("should format successful results", async () => {
+		it("should format successful results with host extraction format", async () => {
 			const config = {
 				name: "test_review",
 				description: "Test review",
@@ -80,23 +80,26 @@ describe("factory", () => {
 			const response = await registeredHandler({ code: "test" });
 
 			expect(response.content[0]?.type).toBe("text");
-			expect(response.content[0]?.text).toContain("test review Review Results");
-			expect(response.content[0]?.text).toContain("(2 models)");
+			// Now uses host extraction format
+			expect(response.content[0]?.text).toContain(
+				"# Multi-Model Code Review Results",
+			);
+			expect(response.content[0]?.text).toContain("2 models participated");
 			expect(response.content[0]?.text).toContain("Review from `model1`");
 			expect(response.content[0]?.text).toContain("Good code");
 			expect(response.content[0]?.text).toContain("Review from `model2`");
 			expect(response.content[0]?.text).toContain("Looks fine");
 		});
 
-		it("should include reviewType in title when provided", async () => {
+		it("should format results with host extraction (reviewType ignored in new format)", async () => {
 			const config = {
 				name: "review_frontend",
 				description: "Frontend review",
 				inputSchema: { code: z.string() },
 				handler: vi.fn().mockResolvedValue({
-					results: [{ model: "model1", review: "Good" }],
+					results: [{ model: "model1", review: "Good accessibility" }],
 					models: ["model1"],
-					reviewType: "accessibility",
+					reviewType: "accessibility", // Note: reviewType is no longer used in the title
 				}),
 			};
 
@@ -104,7 +107,9 @@ describe("factory", () => {
 
 			const response = await registeredHandler({ code: "test" });
 
-			expect(response.content[0]?.text).toContain("accessibility");
+			// Host extraction format includes the review content
+			expect(response.content[0]?.text).toContain("Review from `model1`");
+			expect(response.content[0]?.text).toContain("Good accessibility");
 		});
 
 		it("should format error results", async () => {

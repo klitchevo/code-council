@@ -18,6 +18,10 @@ const gitReviewSchemaObj = z.object({
 		.string()
 		.optional()
 		.describe("Additional context about the changes"),
+	output_format: z
+		.enum(["markdown", "json", "html"])
+		.optional()
+		.describe("Output format for the review (default: markdown)"),
 });
 
 export const gitReviewSchema = gitReviewSchemaObj.shape;

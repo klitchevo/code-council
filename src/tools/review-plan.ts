@@ -17,6 +17,10 @@ export const planReviewSchema = {
 		.string()
 		.optional()
 		.describe("Additional context about the project or constraints"),
+	output_format: z
+		.enum(["markdown", "json", "html"])
+		.optional()
+		.describe("Output format for the review (default: markdown)"),
 };
 
 export async function handlePlanReview(
