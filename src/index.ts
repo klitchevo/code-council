@@ -46,7 +46,83 @@ import {
 	tpsAuditSchema,
 } from "./tools/tps-audit";
 
-// Validate API key
+// CLI argument handling - check before requiring API key
+const args = process.argv.slice(2);
+const command = args[0];
+
+if (command === "init") {
+	// Parse CLI flags for init command
+	const cliOptions: Record<string, unknown> = {};
+
+	for (let i = 1; i < args.length; i++) {
+		const arg = args[i];
+		if (arg === "--js" || arg === "--javascript") {
+			cliOptions.format = "javascript";
+		} else if (arg === "--ts" || arg === "--typescript") {
+			cliOptions.format = "typescript";
+		} else if (arg === "--root") {
+			cliOptions.location = "root";
+		} else if (arg === "--directory" || arg === "--dir") {
+			cliOptions.location = "directory";
+		} else if (arg === "--no-comments") {
+			cliOptions.include_comments = false;
+		} else if (arg === "--force" || arg === "-f") {
+			cliOptions.force = true;
+		} else if (arg === "--help" || arg === "-h") {
+			console.log(`
+Code Council - Initialize Configuration
+
+Usage: npx @klitchevo/code-council init [options]
+
+Options:
+  --ts, --typescript   Generate TypeScript config (default)
+  --js, --javascript   Generate JavaScript config
+  --root               Create config in project root (code-council.config.ts)
+  --dir, --directory   Create config in .code-council/ directory (default)
+  --no-comments        Generate config without explanatory comments
+  --force, -f          Overwrite existing config file
+  --help, -h           Show this help message
+
+Examples:
+  npx @klitchevo/code-council init
+  npx @klitchevo/code-council init --js --root
+  npx @klitchevo/code-council init --force
+`);
+			process.exit(0);
+		}
+	}
+
+	const result = handleInitConfig(cliOptions);
+
+	if (result.success) {
+		console.log(`✓ ${result.message}`);
+		console.log(
+			"\nYou can now customize the configuration by editing the file.",
+		);
+		process.exit(0);
+	} else {
+		console.error(`✗ ${result.message}`);
+		process.exit(1);
+	}
+}
+
+if (command === "--help" || command === "-h") {
+	console.log(`
+Code Council - Multi-model AI code review MCP server
+
+Usage: npx @klitchevo/code-council [command]
+
+Commands:
+  init     Generate a configuration file with default values
+  (none)   Start the MCP server (requires OPENROUTER_API_KEY)
+
+For MCP server usage, configure in your MCP client settings.
+See: https://github.com/klitchevo/code-council
+`);
+	process.exit(0);
+}
+
+// Validate API key (only needed for MCP server mode)
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) {
 	console.error("Error: OPENROUTER_API_KEY environment variable is required");

@@ -393,8 +393,30 @@ export default defineConfig({
 });
 ```
 
-**Generate a config file:**
-Use the `init_config` tool to create a config file with default values:
+**Generate a config file via CLI:**
+```bash
+npx @klitchevo/code-council init
+```
+
+**CLI Options:**
+```bash
+npx @klitchevo/code-council init [options]
+
+Options:
+  --ts, --typescript   Generate TypeScript config (default)
+  --js, --javascript   Generate JavaScript config
+  --root               Create config in project root (code-council.config.ts)
+  --dir, --directory   Create config in .code-council/ directory (default)
+  --no-comments        Generate config without explanatory comments
+  --force, -f          Overwrite existing config file
+
+Examples:
+  npx @klitchevo/code-council init              # Creates .code-council/config.ts
+  npx @klitchevo/code-council init --js --root  # Creates code-council.config.js
+  npx @klitchevo/code-council init --force      # Overwrite existing config
+```
+
+**Or use the MCP tool:**
 ```
 Use init_config to generate a configuration file
 ```
