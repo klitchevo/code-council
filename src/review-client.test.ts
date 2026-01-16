@@ -539,6 +539,30 @@ describe("ReviewClient", () => {
 				choices: [{ message: { content: '{"scores": {}}' } }],
 			});
 
+			const batchResults = [
+				{
+					batchIndex: 0,
+					tokenCount: 1000,
+					analysis: {
+						scores: { overall: 70, flow: 75, waste: 65, quality: 70 },
+						flowAnalysis: {
+							entryPoints: [],
+							diagram: "",
+							pathways: [],
+							observations: [],
+						},
+						bottlenecks: [],
+						waste: {},
+						jidoka: { score: 70, strengths: [], weaknesses: [] },
+						recommendations: [],
+						summary: { strengths: [], concerns: [], quickWins: [] },
+					},
+					rawResponse: "",
+				},
+			];
+
+			await client.tpsAuditSynthesize(batchResults, "model1");
+
 			expect(mockChatSend).toHaveBeenCalled();
 		});
 	});

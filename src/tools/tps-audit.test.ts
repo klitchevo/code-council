@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TpsAnalysis } from "../prompts/tps-audit";
 import type { ModelReviewResult, ReviewClient } from "../review-client";
 import type { ScanResult } from "../utils/repo-scanner";
+import * as repoScanner from "../utils/repo-scanner";
 import {
 	formatTpsAuditResults,
 	handleTpsAudit,
@@ -18,28 +19,6 @@ vi.mock("../logger", () => ({
 	},
 }));
 
-// Import the real functions before mocking to avoid mock pollution
-import {
-	aggregateFiles as realAggregateFiles,
-	createFileBatches as realCreateFileBatches,
-} from "../utils/repo-scanner";
-
-vi.mock("../utils/repo-scanner", () => ({
-	scanRepository: vi.fn(),
-	// Re-export real functions to avoid mock pollution in other tests
-	aggregateFiles: realAggregateFiles,
-	createFileBatches: realCreateFileBatches,
-}));
-
-// Import after mocking
-import * as repoScanner from "../utils/repo-scanner";
-
-const mockScanRepository = repoScanner.scanRepository as ReturnType<
-	typeof vi.fn
->;
-
-// Import real factory functions - don't mock to avoid polluting other tests
-
 vi.mock("node:fs", () => ({
 	existsSync: vi.fn().mockReturnValue(false),
 	mkdirSync: vi.fn().mockImplementation(() => {
@@ -47,6 +26,11 @@ vi.mock("node:fs", () => ({
 	}),
 	writeFileSync: vi.fn(),
 }));
+
+// Use spyOn for scanRepository to preserve real implementations of other exports
+const mockScanRepository = vi
+	.spyOn(repoScanner, "scanRepository")
+	.mockImplementation(vi.fn());
 
 describe("tps-audit tool", () => {
 	beforeEach(() => {
@@ -349,6 +333,8 @@ describe("tps-audit tool", () => {
 			(
 				mockClient.tpsAuditSynthesize as ReturnType<typeof vi.fn>
 			).mockResolvedValue(validAnalysisJson);
+
+			await handleTpsAudit(mockClient, ["model1"], {});
 
 			expect(mockClient.tpsAuditBatch).toHaveBeenCalled();
 			expect(mockClient.tpsAuditSynthesize).toHaveBeenCalled();
