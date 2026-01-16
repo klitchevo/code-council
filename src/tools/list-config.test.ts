@@ -6,6 +6,15 @@ vi.mock("../config", () => ({
 	FRONTEND_REVIEW_MODELS: ["model3"],
 	BACKEND_REVIEW_MODELS: ["model4", "model5"],
 	PLAN_REVIEW_MODELS: ["model6"],
+	CONSENSUS_CONFIG: {
+		enabled: true,
+		modelWeights: {},
+		highConfidenceThreshold: 0.8,
+		moderateConfidenceThreshold: 0.5,
+		extractionModel: "anthropic/claude-3-haiku",
+		fallbackOnError: true,
+		hostExtraction: true,
+	},
 }));
 
 describe("list-config tool", () => {

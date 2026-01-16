@@ -25,6 +25,9 @@ vi.mock("node:fs", () => ({
 		throw new Error("mock fs error");
 	}),
 	writeFileSync: vi.fn(),
+	readFileSync: vi.fn().mockImplementation(() => {
+		throw new Error("mock fs error");
+	}),
 }));
 
 // Use spyOn for scanRepository to preserve real implementations of other exports
@@ -75,7 +78,7 @@ describe("tps-audit tool", () => {
 			},
 		};
 
-		it("should format as HTML by default", () => {
+		it("should format as HTML (falls back to markdown when template unavailable)", () => {
 			const auditResult: TpsAuditResult = {
 				results: mockResults,
 				models: ["model-1", "model-2"],
@@ -86,8 +89,10 @@ describe("tps-audit tool", () => {
 
 			const result = formatTpsAuditResults(auditResult);
 
-			// HTML output should contain the data (either in HTML template or markdown fallback)
-			expect(result).toContain("my-project");
+			// When fs is mocked, HTML falls back to simple markdown format
+			// which contains model reviews
+			expect(result).toContain("model-1");
+			expect(result).toContain("Analysis results here");
 		});
 
 		it("should format as JSON when specified", () => {
