@@ -216,6 +216,12 @@ export interface ConsensusConfig {
 	readonly lineProximity: number;
 	/** Similarity threshold for clustering (default: 0.7) */
 	readonly similarityThreshold: number;
+	/**
+	 * Let the MCP host model do extraction instead of making API calls.
+	 * When true, returns raw reviews formatted for host analysis.
+	 * Recommended for MCP servers. (default: false)
+	 */
+	readonly hostExtraction: boolean;
 }
 
 /**
@@ -227,6 +233,13 @@ export interface ConsensusOptions {
 	readonly moderateConfidenceThreshold?: number;
 	readonly extractionModel?: string;
 	readonly outputFormat?: OutputFormat;
+	/**
+	 * When true, skip extraction API calls and return raw reviews
+	 * formatted for the MCP host model to analyze.
+	 * This is the recommended approach for MCP servers since the
+	 * host model (e.g., Claude) can do the extraction work itself.
+	 */
+	readonly hostExtraction?: boolean;
 }
 
 /**
@@ -241,4 +254,5 @@ export const DEFAULT_CONSENSUS_CONFIG: ConsensusConfig = {
 	fallbackOnError: true,
 	lineProximity: 5,
 	similarityThreshold: 0.7,
+	hostExtraction: true, // Recommended: let MCP host model do extraction
 };

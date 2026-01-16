@@ -6,7 +6,11 @@
  */
 
 export type { BuildResult } from "./builder";
-export { buildConsensus, buildConsensusReport } from "./builder";
+export {
+	buildConsensus,
+	buildConsensusReport,
+	formatForHostExtraction,
+} from "./builder";
 export {
 	clusterFindings,
 	findingSimilarity,

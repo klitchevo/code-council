@@ -1,9 +1,17 @@
 /**
  * Builder that orchestrates the full consensus analysis pipeline.
  * Extract -> Normalize -> Cluster -> Score -> Format
+ *
+ * Supports two modes:
+ * 1. Host extraction (recommended for MCP): Returns raw reviews for host model to analyze
+ * 2. API extraction: Makes additional API calls to extract findings
  */
 
 import { logger } from "../logger";
+import {
+	CATEGORY_DESCRIPTIONS,
+	SEVERITY_DESCRIPTIONS,
+} from "../prompts/consensus";
 import type { ModelReviewResult } from "../review-client";
 import { clusterFindings, groupByConfidence } from "./clustering";
 import { ConsensusClient } from "./consensus-client";
@@ -194,14 +202,129 @@ function createEmptyReport(
 }
 
 /**
+ * Format reviews for host extraction mode.
+ * Returns a structured prompt that the MCP host model can use to analyze the reviews.
+ */
+export function formatForHostExtraction(
+	reviews: ModelReviewResult[],
+	outputFormat: OutputFormat = "markdown",
+): BuildResult {
+	const startTime = Date.now();
+	const participatingModels = reviews.map((r) => r.model);
+
+	// Build the host extraction prompt
+	let formatted: string;
+
+	if (outputFormat === "json") {
+		formatted = JSON.stringify(
+			{
+				mode: "host_extraction",
+				instructions:
+					"Analyze these code reviews and synthesize the findings. Identify common issues, disagreements, and provide a unified assessment.",
+				reviews: reviews.map((r) => ({
+					model: r.model,
+					review: r.error ? null : r.review,
+					error: r.error || null,
+				})),
+				categories: CATEGORY_DESCRIPTIONS,
+				severities: SEVERITY_DESCRIPTIONS,
+			},
+			null,
+			2,
+		);
+	} else {
+		// Markdown format
+		const reviewSections = reviews
+			.map((r) => {
+				if (r.error) {
+					return `## Review from \`${r.model}\`\n\n**Error:** ${r.error}`;
+				}
+				return `## Review from \`${r.model}\`\n\n${r.review}`;
+			})
+			.join("\n\n---\n\n");
+
+		formatted = `# Multi-Model Code Review Results
+
+${participatingModels.length} models participated in this review.
+
+## Instructions for Analysis
+
+Please analyze these reviews and provide:
+1. **High-confidence findings** - Issues identified by multiple models
+2. **Medium-confidence findings** - Issues identified by some models
+3. **Low-confidence findings** - Issues mentioned by only one model
+4. **Disagreements** - Areas where models have conflicting opinions
+
+For each finding, identify:
+- **Category**: ${Object.keys(CATEGORY_DESCRIPTIONS).join(", ")}
+- **Severity**: ${Object.keys(SEVERITY_DESCRIPTIONS).join(", ")}
+- **Location**: File and line numbers if mentioned
+- **Description**: What the issue is
+- **Suggestion**: How to fix it
+
+---
+
+${reviewSections}
+
+---
+
+## Summary Request
+
+Based on the above reviews, please provide a synthesized consensus analysis.`;
+	}
+
+	// Create a minimal report for host extraction mode
+	const report: ConsensusReport = {
+		version: "1.0",
+		generatedAt: new Date().toISOString(),
+		executionTimeMs: Date.now() - startTime,
+		participatingModels,
+		modelWeights: {},
+		thresholds: { high: 0.8, moderate: 0.5 },
+		totalFindings: 0, // Host will determine
+		stats: {
+			unanimous: 0,
+			majority: 0,
+			minority: 0,
+			single: 0,
+			disagreements: 0,
+		},
+		highConfidence: [],
+		moderateConfidence: [],
+		lowConfidence: [],
+		disagreements: [],
+		metadata: {
+			extractionModel: "host", // Indicates host extraction mode
+			extractionErrors: 0,
+		},
+	};
+
+	return { report, formatted };
+}
+
+/**
  * Convenience function to build consensus from reviews in one call
  * Creates a ConsensusClient internally
+ *
+ * @param reviews - Review results from multiple models
+ * @param reviewClient - Client for making LLM calls (only used if hostExtraction is false)
+ * @param options - Consensus options including hostExtraction flag
  */
 export async function buildConsensus(
 	reviews: ModelReviewResult[],
 	reviewClient: import("../review-client").ReviewClient,
 	options: ConsensusOptions = {},
 ): Promise<BuildResult> {
+	// Check if host extraction mode is enabled (default: true)
+	const hostExtraction =
+		options.hostExtraction ?? DEFAULT_CONSENSUS_CONFIG.hostExtraction;
+
+	if (hostExtraction) {
+		logger.debug("Using host extraction mode - returning raw reviews");
+		return formatForHostExtraction(reviews, options.outputFormat ?? "markdown");
+	}
+
+	// API extraction mode - make additional LLM calls
 	const extractionModel =
 		options.extractionModel ?? DEFAULT_CONSENSUS_CONFIG.extractionModel;
 
