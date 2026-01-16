@@ -6,6 +6,8 @@ vi.mock("../config", () => ({
 	FRONTEND_REVIEW_MODELS: ["model3"],
 	BACKEND_REVIEW_MODELS: ["model4", "model5"],
 	PLAN_REVIEW_MODELS: ["model6"],
+	DISCUSSION_MODELS: ["model7", "model8"],
+	TPS_AUDIT_MODELS: ["model9"],
 	CONSENSUS_CONFIG: {
 		enabled: true,
 		modelWeights: {},
