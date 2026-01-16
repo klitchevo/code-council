@@ -183,6 +183,7 @@ Review code for quality, bugs, performance, and security issues.
 - `code` (required): The code to review
 - `language` (optional): Programming language
 - `context` (optional): Additional context about the code
+- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
 
 **Example usage in Claude:**
 ```
@@ -199,6 +200,7 @@ Review frontend code with focus on accessibility, performance, and UX.
 - `framework` (optional): Framework name (e.g., react, vue, svelte)
 - `review_type` (optional): `accessibility`, `performance`, `ux`, or `full` (default)
 - `context` (optional): Additional context
+- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
 
 **Example usage in Claude:**
 ```
@@ -215,6 +217,7 @@ Review backend code for security, performance, and architecture.
 - `language` (optional): Language/framework (e.g., node, python, go, rust)
 - `review_type` (optional): `security`, `performance`, `architecture`, or `full` (default)
 - `context` (optional): Additional context
+- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
 
 **Example usage in Claude:**
 ```
@@ -230,6 +233,7 @@ Review implementation plans BEFORE coding to catch issues early.
 - `plan` (required): The implementation plan to review
 - `review_type` (optional): `feasibility`, `completeness`, `risks`, `timeline`, or `full` (default)
 - `context` (optional): Project constraints or context
+- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
 
 **Example usage in Claude:**
 ```
@@ -249,6 +253,7 @@ Review git changes directly from your repository.
   - `commit` - Review a specific commit (requires `commit_hash`)
 - `commit_hash` (optional): Commit hash to review (required when `review_type` is `commit`)
 - `context` (optional): Additional context about the changes
+- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
 
 **Example usage in Claude:**
 ```
@@ -329,11 +334,124 @@ Reports are saved to `.code-council/` directory:
 
 Show which AI models are currently configured for each review type.
 
+### `init_config`
+
+Generate a Code Council configuration file with default values.
+
+**Parameters:**
+- `location` (optional): Where to create the config file
+  - `directory` (default) - Creates `.code-council/config.ts`
+  - `root` - Creates `code-council.config.ts` in project root
+- `format` (optional): Config file format
+  - `typescript` (default) - TypeScript with full type support
+  - `javascript` - Plain JavaScript
+- `include_comments` (optional): Include explanatory comments (default: `true`)
+- `force` (optional): Overwrite existing config file (default: `false`)
+
+**Example usage in Claude:**
+```
+Use init_config to generate a configuration file
+```
+
+```
+Use init_config with location=root and format=javascript
+```
+
 ## Configuration
 
-### Customizing Models
+Code Council supports two configuration methods:
+1. **Config file** (recommended) - TypeScript/JavaScript config file with full type support
+2. **Environment variables** - Quick setup via MCP client config
 
-You can customize which AI models are used for reviews by setting environment variables in your MCP client configuration. Each review type can use different models.
+### Config File (Recommended)
+
+Create a config file in your project for full type support and autocompletion:
+
+**Option 1: `.code-council/config.ts`** (recommended)
+```typescript
+import { defineConfig } from "@klitchevo/code-council/config";
+
+export default defineConfig({
+  models: {
+    codeReview: ["anthropic/claude-sonnet-4", "openai/gpt-4o"],
+    frontendReview: ["anthropic/claude-sonnet-4"],
+    backendReview: ["openai/gpt-4o", "google/gemini-2.0-flash-exp"],
+  },
+  llm: {
+    temperature: 0.3,
+    maxTokens: 16384,
+  },
+});
+```
+
+**Option 2: `code-council.config.ts`** (project root)
+```typescript
+import { defineConfig } from "@klitchevo/code-council/config";
+
+export default defineConfig({
+  // Same options as above
+});
+```
+
+**Generate a config file:**
+Use the `init_config` tool to create a config file with default values:
+```
+Use init_config to generate a configuration file
+```
+
+#### Complete Config Options
+
+```typescript
+import { defineConfig } from "@klitchevo/code-council/config";
+
+export default defineConfig({
+  // Models for each review type
+  models: {
+    defaultModels: ["model1", "model2"],    // Fallback for all types
+    codeReview: ["model1", "model2"],       // General code reviews
+    frontendReview: ["model1"],             // Frontend reviews
+    backendReview: ["model1", "model2"],    // Backend reviews
+    planReview: ["model1"],                 // Plan reviews
+    discussion: ["model1", "model2"],       // Council discussions
+    tpsAudit: ["model1", "model2"],         // TPS audits
+  },
+
+  // Consensus analysis settings (all reviews use consensus by default)
+  consensus: {
+    modelWeights: {                         // Weight models differently
+      "anthropic/claude-sonnet-4": 1.2,     // Higher = more influence
+      "openai/gpt-4o": 1.0,
+    },
+    highConfidenceThreshold: 0.8,           // Threshold for high confidence
+    moderateConfidenceThreshold: 0.5,       // Threshold for moderate confidence
+  },
+
+  // LLM behavior
+  llm: {
+    temperature: 0.3,                       // 0.0-2.0, lower = more focused
+    maxTokens: 16384,                       // Max response length
+  },
+
+  // Session settings for council discussions
+  session: {
+    maxSessions: 100,                       // Max concurrent sessions
+    maxMessagesPerModel: 20,                // Messages before context windowing
+    ttlMs: 1800000,                         // Session timeout (30 min default)
+    rateLimitPerMinute: 10,                 // Rate limit per session
+  },
+
+  // Input limits
+  inputLimits: {
+    maxCodeLength: 100000,                  // Max code input length
+    maxContextLength: 50000,                // Max context length
+    maxModels: 10,                          // Max models per review
+  },
+});
+```
+
+### Environment Variables
+
+For quick setup without a config file, use environment variables in your MCP client configuration.
 
 **Available Environment Variables:**
 - `CODE_REVIEW_MODELS` - Models for general code reviews
@@ -367,14 +485,23 @@ You can customize which AI models are used for reviews by setting environment va
 }
 ```
 
-**Default Models:**
+### Configuration Priority
+
+Config file settings take priority over environment variables:
+1. Config file value (if set)
+2. Environment variable (if set)
+3. Default value
+
+### Default Models
+
 If you don't specify models, the server uses these defaults:
 - `minimax/minimax-m2.1` - Fast, cost-effective reasoning
 - `z-ai/glm-4.7` - Strong multilingual capabilities
 - `moonshotai/kimi-k2-thinking` - Advanced reasoning with thinking
 - `deepseek/deepseek-v3.2` - State-of-the-art open model
 
-**Finding Models:**
+### Finding Models
+
 Browse all available models at [OpenRouter Models](https://openrouter.ai/models). Popular choices include:
 - `anthropic/claude-sonnet-4.5` - Latest Sonnet, excellent for code review
 - `anthropic/claude-opus-4.5` - Frontier reasoning model for complex tasks

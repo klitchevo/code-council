@@ -27,6 +27,7 @@ import {
 	handleDiscussCouncil,
 } from "./tools/discuss-council";
 import { createReviewTool } from "./tools/factory";
+import { handleInitConfig, initConfigSchema } from "./tools/init-config";
 import { handleListConfig } from "./tools/list-config";
 import {
 	backendReviewSchema,
@@ -160,6 +161,48 @@ server.registerTool(
 		return {
 			content: [{ type: "text" as const, text }],
 		};
+	},
+);
+
+// Register init_config tool
+server.registerTool(
+	"init_config",
+	{
+		description:
+			"Generate a Code Council configuration file with default values. " +
+			"Creates a TypeScript or JavaScript config file with model settings, " +
+			"consensus options, and LLM parameters.",
+		inputSchema: initConfigSchema,
+	},
+	async (input: Record<string, unknown>) => {
+		try {
+			const result = handleInitConfig(input);
+
+			if (result.success) {
+				return {
+					content: [
+						{
+							type: "text" as const,
+							text: `${result.message}\n\nYou can now customize the configuration by editing the file.`,
+						},
+					],
+				};
+			}
+			return {
+				content: [
+					{
+						type: "text" as const,
+						text: result.message,
+					},
+				],
+			};
+		} catch (error) {
+			logger.error(
+				"Error in init_config",
+				error instanceof Error ? error : new Error(String(error)),
+			);
+			return formatError(error);
+		}
 	},
 );
 
