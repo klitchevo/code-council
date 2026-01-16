@@ -7,10 +7,13 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 import {
 	BACKEND_REVIEW_MODELS,
 	CODE_REVIEW_MODELS,
+	CONSENSUS_CONFIG,
 	DISCUSSION_MODELS,
+	ENABLE_CONSENSUS,
 	FRONTEND_REVIEW_MODELS,
 	PLAN_REVIEW_MODELS,
 	TPS_AUDIT_MODELS,
@@ -24,7 +27,7 @@ import {
 	discussCouncilSchema,
 	handleDiscussCouncil,
 } from "./tools/discuss-council";
-import { createReviewTool } from "./tools/factory";
+import { createConsensusReviewTool, createReviewTool } from "./tools/factory";
 import { handleListConfig } from "./tools/list-config";
 import {
 	backendReviewSchema,
@@ -104,6 +107,28 @@ createReviewTool(server, {
 	inputSchema: gitReviewSchema,
 	handler: (input) => handleGitReview(client, CODE_REVIEW_MODELS, input),
 });
+
+// Register consensus-enabled review tool (if consensus is enabled)
+if (ENABLE_CONSENSUS) {
+	const consensusCodeReviewSchema = {
+		...codeReviewSchema,
+		output_format: z
+			.enum(["markdown", "json", "html"])
+			.optional()
+			.describe("Output format for the consensus report (default: markdown)"),
+	};
+
+	createConsensusReviewTool(server, client, {
+		name: "review_code_with_consensus",
+		description:
+			"Review code using multiple AI models with consensus analysis. " +
+			"Extracts findings from each model, clusters similar issues, calculates confidence scores, " +
+			"and highlights disagreements requiring human review. Output includes high/moderate/low confidence findings.",
+		inputSchema: consensusCodeReviewSchema,
+		consensusConfig: CONSENSUS_CONFIG,
+		handler: (input) => handleCodeReview(client, input),
+	});
+}
 
 // Register TPS audit tool (custom handler for HTML/JSON output)
 server.registerTool(

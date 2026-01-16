@@ -65,6 +65,41 @@ export class ValidationError extends AppError {
 }
 
 /**
+ * Error thrown when consensus extraction fails
+ */
+export class ConsensusExtractionError extends AppError {
+	constructor(
+		message: string,
+		public readonly model: string,
+		public readonly recoverable: boolean = true,
+	) {
+		super(
+			message,
+			"CONSENSUS_EXTRACTION_ERROR",
+			recoverable
+				? `Failed to extract findings from ${model}. Continuing with other models.`
+				: `Critical extraction failure for ${model}. Unable to continue.`,
+		);
+	}
+}
+
+/**
+ * Error thrown when consensus clustering fails
+ */
+export class ConsensusClusteringError extends AppError {
+	constructor(
+		message: string,
+		public readonly findingCount: number,
+	) {
+		super(
+			message,
+			"CONSENSUS_CLUSTERING_ERROR",
+			`Failed to cluster ${findingCount} findings. Returning unclustered results.`,
+		);
+	}
+}
+
+/**
  * MCP tool response type
  */
 type MCPToolResponse = {

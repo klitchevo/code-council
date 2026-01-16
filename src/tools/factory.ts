@@ -7,9 +7,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { z } from "zod";
+import { buildConsensus } from "../consensus";
+import type {
+	OutputFormat as ConsensusFormat,
+	ConsensusOptions,
+} from "../consensus/types";
 import { formatError } from "../errors";
 import { logger } from "../logger";
-import type { ModelReviewResult } from "../review-client";
+import type { ModelReviewResult, ReviewClient } from "../review-client";
 
 /**
  * MCP tool response type
@@ -160,6 +165,128 @@ export function createReviewTool(
 						},
 					],
 				} satisfies MCPToolResponse;
+			} catch (error) {
+				logger.error(
+					`Error in ${config.name}`,
+					error instanceof Error ? error : new Error(String(error)),
+				);
+				return formatError(error);
+			}
+		},
+	);
+}
+
+/**
+ * Create a consensus-enabled review tool
+ * Runs standard reviews then applies consensus analysis
+ */
+export function createConsensusReviewTool(
+	server: McpServer,
+	reviewClient: ReviewClient,
+	config: {
+		name: string;
+		description: string;
+		inputSchema: Record<string, z.ZodType<unknown>>;
+		consensusConfig: {
+			enabled: boolean;
+			modelWeights: Record<string, number>;
+			highConfidenceThreshold: number;
+			moderateConfidenceThreshold: number;
+			extractionModel: string;
+			fallbackOnError: boolean;
+		};
+		handler: (input: Record<string, unknown>) => Promise<{
+			results: ModelReviewResult[];
+			models: string[];
+			reviewType?: string;
+		}>;
+	},
+): void {
+	server.registerTool(
+		config.name,
+		{
+			description: config.description,
+			inputSchema: config.inputSchema,
+		},
+		async (input: Record<string, unknown>) => {
+			try {
+				logger.debug(`Starting ${config.name} with consensus`, {
+					inputKeys: Object.keys(input),
+				});
+
+				// Run standard reviews
+				const { results, models, reviewType } = await config.handler(input);
+
+				// Get output format from input if provided
+				const outputFormat =
+					(input.output_format as ConsensusFormat) ?? "markdown";
+
+				logger.info(`Reviews complete, running consensus analysis`, {
+					modelCount: models.length,
+					successCount: results.filter((r) => !r.error).length,
+				});
+
+				// Run consensus analysis
+				const consensusOptions: ConsensusOptions = {
+					modelWeights: config.consensusConfig.modelWeights,
+					highConfidenceThreshold:
+						config.consensusConfig.highConfidenceThreshold,
+					moderateConfidenceThreshold:
+						config.consensusConfig.moderateConfidenceThreshold,
+					extractionModel: config.consensusConfig.extractionModel,
+					outputFormat,
+				};
+
+				try {
+					const { report, formatted } = await buildConsensus(
+						results,
+						reviewClient,
+						consensusOptions,
+					);
+
+					logger.info(`Completed ${config.name} with consensus`, {
+						totalFindings: report.totalFindings,
+						highConfidence: report.highConfidence.length,
+						disagreements: report.disagreements.length,
+						executionMs: report.executionTimeMs,
+					});
+
+					return {
+						content: [
+							{
+								type: "text" as const,
+								text: formatted,
+							},
+						],
+					} satisfies MCPToolResponse;
+				} catch (consensusError) {
+					// If consensus fails and fallback is enabled, return raw results
+					if (config.consensusConfig.fallbackOnError) {
+						logger.warn(
+							"Consensus analysis failed, falling back to raw results",
+							{
+								error:
+									consensusError instanceof Error
+										? consensusError.message
+										: String(consensusError),
+							},
+						);
+
+						const title = reviewType
+							? `# ${config.name.replace("review_", "").replace("_", " ")} Review - ${reviewType} (${models.length} models)\n\n*Note: Consensus analysis failed, showing raw results*`
+							: `# ${config.name.replace("review_", "").replace("_", " ")} Review Results (${models.length} models)\n\n*Note: Consensus analysis failed, showing raw results*`;
+
+						return {
+							content: [
+								{
+									type: "text" as const,
+									text: `${title}\n\n${formatResults(results)}`,
+								},
+							],
+						} satisfies MCPToolResponse;
+					}
+					throw consensusError;
+				}
 			} catch (error) {
 				logger.error(
 					`Error in ${config.name}`,
