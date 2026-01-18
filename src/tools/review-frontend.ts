@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { FRONTEND_REVIEW_MODELS } from "../config";
+import { getFrontendReviewModels } from "../config";
 import { logger } from "../logger";
 import type { ReviewClient } from "../review-client";
 
@@ -36,13 +36,13 @@ export async function handleFrontendReview(
 	};
 
 	logger.info("Running frontend review", {
-		modelCount: FRONTEND_REVIEW_MODELS.length,
-		models: FRONTEND_REVIEW_MODELS,
+		modelCount: getFrontendReviewModels().length,
+		models: getFrontendReviewModels(),
 		framework,
 		reviewType: review_type || "full",
 	});
 
-	const results = await client.reviewFrontend(code, FRONTEND_REVIEW_MODELS, {
+	const results = await client.reviewFrontend(code, getFrontendReviewModels(), {
 		framework,
 		reviewType: review_type,
 		context,
@@ -50,7 +50,7 @@ export async function handleFrontendReview(
 
 	return {
 		results,
-		models: FRONTEND_REVIEW_MODELS,
+		models: getFrontendReviewModels(),
 		reviewType: review_type || "full",
 	};
 }

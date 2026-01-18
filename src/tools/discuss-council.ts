@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { DISCUSSION_MODELS } from "../config.js";
+import { getDiscussionModels } from "../config.js";
 import { SESSION_LIMITS } from "../constants.js";
 import { ValidationError } from "../errors.js";
 import { logger } from "../logger.js";
@@ -122,7 +122,7 @@ export async function handleDiscussCouncil(
 		const session = sessionStore.createSession({
 			topic,
 			discussionType: type,
-			models: DISCUSSION_MODELS,
+			models: getDiscussionModels(),
 			systemPrompt,
 			initialUserMessage: initialMessage,
 		});
@@ -132,7 +132,7 @@ export async function handleDiscussCouncil(
 		logger.info("Started new council discussion", {
 			sessionId,
 			discussionType: type,
-			modelCount: DISCUSSION_MODELS.length,
+			modelCount: getDiscussionModels().length,
 		});
 	}
 

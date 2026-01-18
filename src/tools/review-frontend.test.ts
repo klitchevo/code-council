@@ -15,7 +15,7 @@ vi.mock("../logger", () => ({
 }));
 
 vi.mock("../config", () => ({
-	FRONTEND_REVIEW_MODELS: ["model1", "model2"],
+	getFrontendReviewModels: () => ["model1", "model2"],
 }));
 
 describe("review-frontend tool", () => {

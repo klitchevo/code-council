@@ -18,7 +18,7 @@ vi.mock("../logger", () => ({
 }));
 
 vi.mock("../config", () => ({
-	DISCUSSION_MODELS: ["model1", "model2"],
+	getDiscussionModels: () => ["model1", "model2"],
 }));
 
 describe("discuss-council tool", () => {

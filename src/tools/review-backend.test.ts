@@ -12,7 +12,7 @@ vi.mock("../logger", () => ({
 }));
 
 vi.mock("../config", () => ({
-	BACKEND_REVIEW_MODELS: ["model1", "model2"],
+	getBackendReviewModels: () => ["model1", "model2"],
 }));
 
 describe("review-backend tool", () => {

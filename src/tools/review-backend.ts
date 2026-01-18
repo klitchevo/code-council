@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { BACKEND_REVIEW_MODELS } from "../config";
+import { getBackendReviewModels } from "../config";
 import { logger } from "../logger";
 import type { ReviewClient } from "../review-client";
 
@@ -36,13 +36,13 @@ export async function handleBackendReview(
 	};
 
 	logger.info("Running backend review", {
-		modelCount: BACKEND_REVIEW_MODELS.length,
-		models: BACKEND_REVIEW_MODELS,
+		modelCount: getBackendReviewModels().length,
+		models: getBackendReviewModels(),
 		language,
 		reviewType: review_type || "full",
 	});
 
-	const results = await client.reviewBackend(code, BACKEND_REVIEW_MODELS, {
+	const results = await client.reviewBackend(code, getBackendReviewModels(), {
 		language,
 		reviewType: review_type,
 		context,
@@ -50,7 +50,7 @@ export async function handleBackendReview(
 
 	return {
 		results,
-		models: BACKEND_REVIEW_MODELS,
+		models: getBackendReviewModels(),
 		reviewType: review_type || "full",
 	};
 }

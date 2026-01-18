@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { handleListConfig } from "./list-config.js";
 
 vi.mock("../config", () => ({
-	CODE_REVIEW_MODELS: ["model1", "model2"],
-	FRONTEND_REVIEW_MODELS: ["model3"],
-	BACKEND_REVIEW_MODELS: ["model4", "model5"],
-	PLAN_REVIEW_MODELS: ["model6"],
-	DISCUSSION_MODELS: ["model7", "model8"],
-	TPS_AUDIT_MODELS: ["model9"],
-	CONSENSUS_CONFIG: {
+	getCodeReviewModels: () => ["model1", "model2"],
+	getFrontendReviewModels: () => ["model3"],
+	getBackendReviewModels: () => ["model4", "model5"],
+	getPlanReviewModels: () => ["model6"],
+	getDiscussionModels: () => ["model7", "model8"],
+	getTpsAuditModels: () => ["model9"],
+	getConsensusConfig: () => ({
 		enabled: true,
 		modelWeights: {},
 		highConfidenceThreshold: 0.8,
@@ -16,7 +16,7 @@ vi.mock("../config", () => ({
 		extractionModel: "anthropic/claude-3-haiku",
 		fallbackOnError: true,
 		hostExtraction: true,
-	},
+	}),
 }));
 
 describe("list-config tool", () => {

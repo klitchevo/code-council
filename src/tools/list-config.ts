@@ -3,32 +3,31 @@
  */
 
 import {
-	BACKEND_REVIEW_MODELS,
-	CODE_REVIEW_MODELS,
-	CONSENSUS_CONFIG,
-	DISCUSSION_MODELS,
-	FRONTEND_REVIEW_MODELS,
-	PLAN_REVIEW_MODELS,
-	TPS_AUDIT_MODELS,
+	getBackendReviewModels,
+	getCodeReviewModels,
+	getConsensusConfig,
+	getDiscussionModels,
+	getFrontendReviewModels,
+	getPlanReviewModels,
+	getTpsAuditModels,
 } from "../config";
 
 export async function handleListConfig() {
+	const consensusConfig = getConsensusConfig();
 	const consensusSection = `
 ## Consensus Analysis
 
-**Status:** ${CONSENSUS_CONFIG.enabled ? "✅ Enabled" : "❌ Disabled"}
+**Status:** ${consensusConfig.enabled ? "✅ Enabled" : "❌ Disabled"}
 ${
-	CONSENSUS_CONFIG.enabled
+	consensusConfig.enabled
 		? `
-**Extraction Model:** \`${CONSENSUS_CONFIG.extractionModel}\`
-**High Confidence Threshold:** ${CONSENSUS_CONFIG.highConfidenceThreshold * 100}%
-**Moderate Confidence Threshold:** ${CONSENSUS_CONFIG.moderateConfidenceThreshold * 100}%
-**Fallback on Error:** ${CONSENSUS_CONFIG.fallbackOnError ? "Yes" : "No"}
+**Extraction Model:** \`${consensusConfig.extractionModel}\`
+**High Confidence Threshold:** ${consensusConfig.highConfidenceThreshold * 100}%
+**Moderate Confidence Threshold:** ${consensusConfig.moderateConfidenceThreshold * 100}%
+**Fallback on Error:** ${consensusConfig.fallbackOnError ? "Yes" : "No"}
 ${
-	Object.keys(CONSENSUS_CONFIG.modelWeights).length > 0
-		? `**Custom Model Weights:**\n${Object.entries(
-				CONSENSUS_CONFIG.modelWeights,
-			)
+	Object.keys(consensusConfig.modelWeights).length > 0
+		? `**Custom Model Weights:**\n${Object.entries(consensusConfig.modelWeights)
 				.map(([m, w]) => `- \`${m}\`: ${w}`)
 				.join("\n")}`
 		: "*Using equal weights for all models*"
@@ -40,22 +39,34 @@ To enable consensus analysis, set \`ENABLE_CONSENSUS=true\``
 	const text = `## Current Configuration
 
 **Code Review Models:**
-${CODE_REVIEW_MODELS.map((m) => `- \`${m}\``).join("\n")}
+${getCodeReviewModels()
+	.map((m) => `- \`${m}\``)
+	.join("\n")}
 
 **Frontend Review Models:**
-${FRONTEND_REVIEW_MODELS.map((m) => `- \`${m}\``).join("\n")}
+${getFrontendReviewModels()
+	.map((m) => `- \`${m}\``)
+	.join("\n")}
 
 **Backend Review Models:**
-${BACKEND_REVIEW_MODELS.map((m) => `- \`${m}\``).join("\n")}
+${getBackendReviewModels()
+	.map((m) => `- \`${m}\``)
+	.join("\n")}
 
 **Plan Review Models:**
-${PLAN_REVIEW_MODELS.map((m) => `- \`${m}\``).join("\n")}
+${getPlanReviewModels()
+	.map((m) => `- \`${m}\``)
+	.join("\n")}
 
 **Discussion Models:**
-${DISCUSSION_MODELS.map((m) => `- \`${m}\``).join("\n")}
+${getDiscussionModels()
+	.map((m) => `- \`${m}\``)
+	.join("\n")}
 
 **TPS Audit Models:**
-${TPS_AUDIT_MODELS.map((m) => `- \`${m}\``).join("\n")}
+${getTpsAuditModels()
+	.map((m) => `- \`${m}\``)
+	.join("\n")}
 ${consensusSection}
 
 ## Environment Variables

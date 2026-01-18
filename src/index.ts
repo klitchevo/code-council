@@ -8,14 +8,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
-	BACKEND_REVIEW_MODELS,
-	CODE_REVIEW_MODELS,
-	DISCUSSION_MODELS,
-	FRONTEND_REVIEW_MODELS,
+	getBackendReviewModels,
+	getCodeReviewModels,
 	getConfigPath,
+	getDiscussionModels,
+	getFrontendReviewModels,
+	getPlanReviewModels,
+	getTpsAuditModels,
 	initializeConfig,
-	PLAN_REVIEW_MODELS,
-	TPS_AUDIT_MODELS,
 } from "./config";
 import { formatError } from "./errors";
 import { logger } from "./logger";
@@ -181,7 +181,7 @@ createReviewTool(server, {
 	description:
 		"Review git changes (staged, unstaged, diff, or specific commit) using multiple AI models in parallel",
 	inputSchema: gitReviewSchema,
-	handler: (input) => handleGitReview(client, CODE_REVIEW_MODELS, input),
+	handler: (input) => handleGitReview(client, getCodeReviewModels(), input),
 });
 
 // Register TPS audit tool (custom handler for HTML/JSON output)
@@ -200,7 +200,7 @@ server.registerTool(
 				inputKeys: Object.keys(input),
 			});
 
-			const result = await handleTpsAudit(client, TPS_AUDIT_MODELS, input);
+			const result = await handleTpsAudit(client, getTpsAuditModels(), input);
 			const formattedOutput = formatTpsAuditResults(result);
 
 			logger.info("Completed tps_audit", {
@@ -324,12 +324,12 @@ async function main() {
 
 	logger.info("Code Council MCP server started", {
 		configFile: configFilePath,
-		codeReviewModels: CODE_REVIEW_MODELS,
-		frontendReviewModels: FRONTEND_REVIEW_MODELS,
-		backendReviewModels: BACKEND_REVIEW_MODELS,
-		planReviewModels: PLAN_REVIEW_MODELS,
-		discussionModels: DISCUSSION_MODELS,
-		tpsAuditModels: TPS_AUDIT_MODELS,
+		codeReviewModels: getCodeReviewModels(),
+		frontendReviewModels: getFrontendReviewModels(),
+		backendReviewModels: getBackendReviewModels(),
+		planReviewModels: getPlanReviewModels(),
+		discussionModels: getDiscussionModels(),
+		tpsAuditModels: getTpsAuditModels(),
 	});
 }
 

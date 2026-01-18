@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { PLAN_REVIEW_MODELS } from "../config";
+import { getPlanReviewModels } from "../config";
 import { logger } from "../logger";
 import type { ReviewClient } from "../review-client";
 
@@ -39,19 +39,19 @@ export async function handlePlanReview(
 	};
 
 	logger.info("Running plan review", {
-		modelCount: PLAN_REVIEW_MODELS.length,
-		models: PLAN_REVIEW_MODELS,
+		modelCount: getPlanReviewModels().length,
+		models: getPlanReviewModels(),
 		reviewType: review_type || "full",
 	});
 
-	const results = await client.reviewPlan(plan, PLAN_REVIEW_MODELS, {
+	const results = await client.reviewPlan(plan, getPlanReviewModels(), {
 		reviewType: review_type,
 		context,
 	});
 
 	return {
 		results,
-		models: PLAN_REVIEW_MODELS,
+		models: getPlanReviewModels(),
 		reviewType: review_type || "full",
 	};
 }

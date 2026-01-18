@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { CODE_REVIEW_MODELS } from "../config";
+import { getCodeReviewModels } from "../config";
 import { logger } from "../logger";
 import type { ReviewClient } from "../review-client";
 
@@ -32,20 +32,20 @@ export async function handleCodeReview(
 		: context;
 
 	logger.info("Running code review", {
-		modelCount: CODE_REVIEW_MODELS.length,
-		models: CODE_REVIEW_MODELS,
+		modelCount: getCodeReviewModels().length,
+		models: getCodeReviewModels(),
 		hasLanguage: !!language,
 		hasContext: !!context,
 	});
 
 	const results = await client.reviewCode(
 		code,
-		CODE_REVIEW_MODELS,
+		getCodeReviewModels(),
 		fullContext,
 	);
 
 	return {
 		results,
-		models: CODE_REVIEW_MODELS,
+		models: getCodeReviewModels(),
 	};
 }

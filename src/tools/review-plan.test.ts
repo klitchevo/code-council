@@ -12,7 +12,7 @@ vi.mock("../logger", () => ({
 }));
 
 vi.mock("../config", () => ({
-	PLAN_REVIEW_MODELS: ["model1", "model2"],
+	getPlanReviewModels: () => ["model1", "model2"],
 }));
 
 describe("review-plan tool", () => {
