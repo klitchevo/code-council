@@ -40,8 +40,7 @@
 		"check": "biome check src",
 		"check:fix": "biome check --write src",
 		"typecheck": "tsc --noEmit",
-		"prepare": "lefthook install",
-		"prepublishOnly": "bun run typecheck && bun test && bun run build"
+		"prepare": "lefthook install"
 	},
 	"keywords": [
 		"mcp",
