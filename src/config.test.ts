@@ -1,7 +1,7 @@
 /**
  * Tests for config module
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getBackendReviewModels,
 	getCodeReviewModels,
@@ -18,7 +18,6 @@ import {
 	getModerateConfidenceThreshold,
 	getPlanReviewModels,
 	getTpsAuditModels,
-	initializeConfig,
 	isConfigInitialized,
 	parseModels,
 	parseModelWeights,
@@ -197,11 +196,8 @@ describe("parseModelWeights", () => {
 });
 
 describe("initializeConfig", () => {
-	beforeEach(async () => {
+	beforeEach(() => {
 		vi.resetModules();
-	});
-
-	afterEach(() => {
 		vi.clearAllMocks();
 	});
 
@@ -212,11 +208,11 @@ describe("initializeConfig", () => {
 			configPath: "/test/config.ts",
 		});
 
-		// Re-import to get fresh module state
-		const configModule = await import("./config");
-
-		// Reset initialization state by calling with a unique path
-		await configModule.initializeConfig("/fresh/path");
+		// Re-import to get fresh module state after resetModules
+		const { initializeConfig: freshInitializeConfig } = await import(
+			"./config"
+		);
+		await freshInitializeConfig("/fresh/path");
 
 		expect(loadConfig).toHaveBeenCalled();
 	});
@@ -227,8 +223,13 @@ describe("initializeConfig", () => {
 			new Error("Config load failed"),
 		);
 
+		// Re-import to get fresh module state after resetModules
+		const { initializeConfig: freshInitializeConfig } = await import(
+			"./config"
+		);
+
 		// Should not throw
-		await expect(initializeConfig("/error/path")).resolves.not.toThrow();
+		await expect(freshInitializeConfig("/error/path")).resolves.not.toThrow();
 	});
 });
 

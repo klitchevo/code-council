@@ -3,7 +3,15 @@
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createJiti } from "jiti";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	findConfigFile,
+	hasConfigFile,
+	loadConfig,
+	loadConfigFile,
+} from "./loader";
+import { CodeCouncilConfigSchema } from "./schema";
 
 // Mock node:fs
 vi.mock("node:fs", () => ({
@@ -25,77 +33,71 @@ vi.mock("./schema", () => ({
 }));
 
 const mockExistsSync = existsSync as ReturnType<typeof vi.fn>;
+const mockCreateJiti = createJiti as ReturnType<typeof vi.fn>;
+const mockSafeParse = CodeCouncilConfigSchema.safeParse as ReturnType<
+	typeof vi.fn
+>;
 
 describe("Config Loader", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	afterEach(() => {
-		vi.resetModules();
-	});
-
 	describe("findConfigFile", () => {
-		it("returns null when no config file exists", async () => {
+		it("returns null when no config file exists", () => {
 			mockExistsSync.mockReturnValue(false);
 
-			const { findConfigFile } = await import("./loader");
 			const result = findConfigFile("/test/project");
 
 			expect(result).toBeNull();
 			expect(mockExistsSync).toHaveBeenCalledTimes(4);
 		});
 
-		it("returns first matching config file (.code-council/config.ts)", async () => {
+		it("returns first matching config file (.code-council/config.ts)", () => {
 			mockExistsSync.mockImplementation((path: string) =>
 				path.endsWith(".code-council/config.ts"),
 			);
 
-			const { findConfigFile } = await import("./loader");
 			const result = findConfigFile("/test/project");
 
 			expect(result).toBe("/test/project/.code-council/config.ts");
 		});
 
-		it("returns .code-council/config.js when .ts not found", async () => {
+		it("returns .code-council/config.js when .ts not found", () => {
 			mockExistsSync.mockImplementation(
 				(path: string) =>
 					!path.endsWith(".code-council/config.ts") &&
 					path.endsWith(".code-council/config.js"),
 			);
 
-			const { findConfigFile } = await import("./loader");
 			const result = findConfigFile("/test/project");
 
 			expect(result).toBe("/test/project/.code-council/config.js");
 		});
 
-		it("returns root config.ts when directory config not found", async () => {
+		it("returns root config.ts when directory config not found", () => {
 			mockExistsSync.mockImplementation((path: string) =>
 				path.endsWith("code-council.config.ts"),
 			);
 
-			const { findConfigFile } = await import("./loader");
 			const result = findConfigFile("/test/project");
 
 			expect(result).toBe("/test/project/code-council.config.ts");
 		});
 
-		it("returns root config.js as last priority", async () => {
+		it("returns root config.js as last priority", () => {
 			mockExistsSync.mockImplementation((path: string) =>
 				path.endsWith("code-council.config.js"),
 			);
 
-			const { findConfigFile } = await import("./loader");
 			const result = findConfigFile("/test/project");
 
 			expect(result).toBe("/test/project/code-council.config.js");
 		});
 
-		it("uses process.cwd() when no cwd provided", async () => {
+		it("uses process.cwd() when no cwd provided", () => {
 			mockExistsSync.mockReturnValue(false);
 
-			const { findConfigFile } = await import("./loader");
 			findConfigFile();
 
 			expect(mockExistsSync).toHaveBeenCalledWith(
@@ -106,66 +108,49 @@ describe("Config Loader", () => {
 
 	describe("loadConfigFile", () => {
 		it("loads and validates config from a file", async () => {
-			const { createJiti } = await import("jiti");
-			const { CodeCouncilConfigSchema } = await import("./schema");
-
 			const mockConfig = {
 				models: { defaultModels: ["model-1"] },
 			};
 
-			(createJiti as ReturnType<typeof vi.fn>).mockReturnValue({
+			mockCreateJiti.mockReturnValue({
 				import: vi.fn().mockResolvedValue({ default: mockConfig }),
 			});
 
-			(
-				CodeCouncilConfigSchema.safeParse as ReturnType<typeof vi.fn>
-			).mockReturnValue({
+			mockSafeParse.mockReturnValue({
 				success: true,
 				data: mockConfig,
 			});
 
-			const { loadConfigFile } = await import("./loader");
 			const result = await loadConfigFile("/test/config.ts");
 
 			expect(result).toEqual(mockConfig);
 		});
 
 		it("handles config without default export", async () => {
-			const { createJiti } = await import("jiti");
-			const { CodeCouncilConfigSchema } = await import("./schema");
-
 			const mockConfig = {
 				models: { codeReview: ["model-2"] },
 			};
 
-			(createJiti as ReturnType<typeof vi.fn>).mockReturnValue({
+			mockCreateJiti.mockReturnValue({
 				import: vi.fn().mockResolvedValue(mockConfig),
 			});
 
-			(
-				CodeCouncilConfigSchema.safeParse as ReturnType<typeof vi.fn>
-			).mockReturnValue({
+			mockSafeParse.mockReturnValue({
 				success: true,
 				data: mockConfig,
 			});
 
-			const { loadConfigFile } = await import("./loader");
 			const result = await loadConfigFile("/test/config.ts");
 
 			expect(result).toEqual(mockConfig);
 		});
 
 		it("throws on invalid config with formatted errors", async () => {
-			const { createJiti } = await import("jiti");
-			const { CodeCouncilConfigSchema } = await import("./schema");
-
-			(createJiti as ReturnType<typeof vi.fn>).mockReturnValue({
+			mockCreateJiti.mockReturnValue({
 				import: vi.fn().mockResolvedValue({ default: { invalid: true } }),
 			});
 
-			(
-				CodeCouncilConfigSchema.safeParse as ReturnType<typeof vi.fn>
-			).mockReturnValue({
+			mockSafeParse.mockReturnValue({
 				success: false,
 				error: {
 					issues: [
@@ -181,8 +166,6 @@ describe("Config Loader", () => {
 				},
 			});
 
-			const { loadConfigFile } = await import("./loader");
-
 			await expect(loadConfigFile("/test/config.ts")).rejects.toThrow(
 				"Invalid configuration in /test/config.ts",
 			);
@@ -193,7 +176,6 @@ describe("Config Loader", () => {
 		it("returns empty config when no config file found", async () => {
 			mockExistsSync.mockReturnValue(false);
 
-			const { loadConfig } = await import("./loader");
 			const result = await loadConfig("/test/project");
 
 			expect(result).toEqual({
@@ -203,27 +185,21 @@ describe("Config Loader", () => {
 		});
 
 		it("loads config when file exists", async () => {
-			const { createJiti } = await import("jiti");
-			const { CodeCouncilConfigSchema } = await import("./schema");
-
 			mockExistsSync.mockImplementation((path: string) =>
 				path.endsWith(".code-council/config.ts"),
 			);
 
 			const mockConfig = { llm: { temperature: 0.5 } };
 
-			(createJiti as ReturnType<typeof vi.fn>).mockReturnValue({
+			mockCreateJiti.mockReturnValue({
 				import: vi.fn().mockResolvedValue({ default: mockConfig }),
 			});
 
-			(
-				CodeCouncilConfigSchema.safeParse as ReturnType<typeof vi.fn>
-			).mockReturnValue({
+			mockSafeParse.mockReturnValue({
 				success: true,
 				data: mockConfig,
 			});
 
-			const { loadConfig } = await import("./loader");
 			const result = await loadConfig("/test/project");
 
 			expect(result.config).toEqual(mockConfig);
@@ -232,19 +208,17 @@ describe("Config Loader", () => {
 	});
 
 	describe("hasConfigFile", () => {
-		it("returns true when config file exists", async () => {
+		it("returns true when config file exists", () => {
 			mockExistsSync.mockImplementation((path: string) =>
 				path.endsWith("code-council.config.ts"),
 			);
 
-			const { hasConfigFile } = await import("./loader");
 			expect(hasConfigFile("/test/project")).toBe(true);
 		});
 
-		it("returns false when no config file exists", async () => {
+		it("returns false when no config file exists", () => {
 			mockExistsSync.mockReturnValue(false);
 
-			const { hasConfigFile } = await import("./loader");
 			expect(hasConfigFile("/test/project")).toBe(false);
 		});
 	});
