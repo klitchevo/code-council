@@ -519,7 +519,7 @@ Config file settings take priority over environment variables:
 If you don't specify models, the server uses these defaults:
 - `minimax/minimax-m2.1` - Fast, cost-effective reasoning
 - `z-ai/glm-4.7` - Strong multilingual capabilities
-- `moonshotai/kimi-k2-thinking` - Advanced reasoning with thinking
+- `moonshotai/kimi-k2.5` - Advanced reasoning with thinking
 - `deepseek/deepseek-v3.2` - State-of-the-art open model
 
 ### Finding Models

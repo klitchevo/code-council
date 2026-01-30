@@ -100,6 +100,7 @@ export type KnownModel =
 	| "minimax/minimax-m2.1"
 	| "z-ai/glm-4.7"
 	| "moonshotai/kimi-k2-thinking"
+	| "moonshotai/kimi-k2.5"
 	| "perplexity/sonar-pro"
 	| "perplexity/sonar-pro-search"
 	| "nvidia/nemotron-3-nano-30b-a3b";
