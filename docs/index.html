@@ -1193,6 +1193,17 @@ npx @klitchevo/code-council init --js --root</code></pre>
 
     function updateActiveLink() {
       const scrollPos = window.scrollY + 100;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      const atBottom = (window.scrollY + windowHeight) >= (docHeight - 50);
+
+      // If at bottom of page, activate last nav link
+      if (atBottom) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const lastLink = navLinks[navLinks.length - 1];
+        if (lastLink) lastLink.classList.add('active');
+        return;
+      }
 
       sections.forEach(section => {
         const top = section.offsetTop;
