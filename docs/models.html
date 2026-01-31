@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Selection - Code Council</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #1a1a2e;
+      --green: #10b981;
+      --green-light: #34d399;
+      --blue: #3b82f6;
+      --blue-light: #60a5fa;
+      --purple: #8b5cf6;
+      --purple-light: #a78bfa;
+      --orange: #f59e0b;
+      --orange-light: #fbbf24;
+      --text: rgba(255, 255, 255, 0.9);
+      --text-muted: rgba(255, 255, 255, 0.5);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+    nav {
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 40px;
+    }
+    nav .container { display: flex; justify-content: space-between; align-items: center; }
+    nav a { color: var(--text-muted); text-decoration: none; font-size: 14px; }
+    nav a:hover { color: var(--text); }
+    .nav-brand { font-weight: 700; font-size: 18px; color: var(--text); }
+    .nav-links { display: flex; gap: 24px; }
+
+    .page-header {
+      padding: 40px 0;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 48px;
+    }
+    .page-header h1 { font-size: 42px; font-weight: 800; margin-bottom: 12px; }
+    .page-header p { color: var(--text-muted); font-size: 18px; }
+
+    .content { padding-bottom: 80px; }
+
+    h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 48px 0 24px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    h2:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 32px 0 16px;
+      color: var(--green-light);
+    }
+
+    p { margin-bottom: 16px; color: var(--text-muted); }
+
+    code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--green-light);
+    }
+
+    pre {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 16px 0 24px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .code-comment { color: rgba(255,255,255,0.3); }
+    .code-string { color: var(--green-light); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    th { font-weight: 600; color: var(--text); background: rgba(0,0,0,0.2); }
+    td { color: var(--text-muted); }
+    td code { font-size: 12px; }
+
+    /* Model cards */
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .model-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .model-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .model-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .model-dot.orange { background: var(--orange); }
+    .model-dot.green { background: var(--green); }
+    .model-dot.blue { background: var(--blue); }
+    .model-dot.purple { background: var(--purple); }
+
+    .model-card h4 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .model-card p {
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .model-card code {
+      display: block;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Tier boxes */
+    .tier-box {
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .tier-box h4 {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .tier-box.budget { border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tier-box.budget h4 { color: var(--green-light); }
+
+    .tier-box.balanced { border: 1px solid rgba(59, 130, 246, 0.3); }
+    .tier-box.balanced h4 { color: var(--blue-light); }
+
+    .tier-box.premium { border: 1px solid rgba(139, 92, 246, 0.3); }
+    .tier-box.premium h4 { color: var(--purple-light); }
+
+    .tier-cost {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    ul {
+      margin: 16px 0 24px 24px;
+      color: var(--text-muted);
+    }
+    li { margin-bottom: 8px; }
+
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 24px 0;
+    }
+    .info-box p { color: var(--blue-light); margin: 0; }
+
+    footer {
+      padding: 40px 0;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    footer a { color: var(--text-muted); text-decoration: none; margin: 0 16px; font-size: 14px; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="index.html" class="nav-brand">Code Council</a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="tools.html">Tools</a>
+        <a href="configuration.html">Configuration</a>
+        <a href="models.html">Models</a>
+        <a href="https://github.com/klitchevo/code-council">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="container">
+      <h1>Model Selection</h1>
+      <p>Choose the right models for your needs and budget</p>
+    </div>
+  </div>
+
+  <div class="container content">
+
+    <h2>Default Models</h2>
+    <p>Out of the box, Code Council uses these cost-effective models:</p>
+
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="model-card-header">
+          <div class="model-dot orange"></div>
+          <h4>Minimax M2.1</h4>
+        </div>
+        <p>Fast, cost-effective reasoning</p>
+        <code>minimax/minimax-m2.1</code>
+      </div>
+      <div class="model-card">
+        <div class="model-card-header">
+          <div class="model-dot green"></div>
+          <h4>GLM 4.7</h4>
+        </div>
+        <p>Strong multilingual capabilities</p>
+        <code>z-ai/glm-4.7</code>
+      </div>
+      <div class="model-card">
+        <div class="model-card-header">
+          <div class="model-dot blue"></div>
+          <h4>Kimi K2.5</h4>
+        </div>
+        <p>Advanced reasoning with thinking</p>
+        <code>moonshotai/kimi-k2.5</code>
+      </div>
+      <div class="model-card">
+        <div class="model-card-header">
+          <div class="model-dot purple"></div>
+          <h4>DeepSeek V3.2</h4>
+        </div>
+        <p>State-of-the-art open model</p>
+        <code>deepseek/deepseek-v3.2</code>
+      </div>
+    </div>
+
+    <p>These defaults are chosen for:</p>
+    <ul>
+      <li><strong>Low cost</strong> - Typically $0.01-0.05 per review</li>
+      <li><strong>Good quality</strong> - Competitive with premium models</li>
+      <li><strong>Fast response</strong> - Lower latency</li>
+      <li><strong>Diverse perspectives</strong> - Different architectures catch different issues</li>
+    </ul>
+
+    <h2>Configuration Tiers</h2>
+
+    <div class="tier-box budget">
+      <h4>Budget-Conscious (Default)</h4>
+      <div class="tier-cost">~$0.01-0.05 per review</div>
+      <pre><code>models: {
+  codeReview: [
+    <span class="code-string">"minimax/minimax-m2.1"</span>,
+    <span class="code-string">"z-ai/glm-4.7"</span>,
+    <span class="code-string">"moonshotai/kimi-k2.5"</span>,
+    <span class="code-string">"deepseek/deepseek-v3.2"</span>,
+  ],
+}</code></pre>
+    </div>
+
+    <div class="tier-box balanced">
+      <h4>Balanced Quality</h4>
+      <div class="tier-cost">~$0.10-0.30 per review</div>
+      <pre><code>models: {
+  codeReview: [
+    <span class="code-string">"anthropic/claude-sonnet-4"</span>,
+    <span class="code-string">"openai/gpt-4o"</span>,
+    <span class="code-string">"google/gemini-2.0-flash-exp"</span>,
+  ],
+}</code></pre>
+    </div>
+
+    <div class="tier-box premium">
+      <h4>Maximum Quality</h4>
+      <div class="tier-cost">~$0.50-1.00 per review</div>
+      <pre><code>models: {
+  codeReview: [
+    <span class="code-string">"anthropic/claude-opus-4.5"</span>,
+    <span class="code-string">"anthropic/claude-sonnet-4.5"</span>,
+    <span class="code-string">"openai/gpt-4o"</span>,
+    <span class="code-string">"google/gemini-2.0-flash-exp"</span>,
+  ],
+}</code></pre>
+    </div>
+
+    <h2>Premium Model Options</h2>
+    <p>For higher quality reviews, swap in frontier models:</p>
+
+    <table>
+      <tr><th>Model</th><th>Best For</th><th>Cost</th></tr>
+      <tr><td><code>anthropic/claude-sonnet-4.5</code></td><td>Security, nuanced logic, best overall</td><td>Higher</td></tr>
+      <tr><td><code>anthropic/claude-opus-4.5</code></td><td>Complex architectural decisions</td><td>Highest</td></tr>
+      <tr><td><code>openai/gpt-4o</code></td><td>Architectural patterns, documentation</td><td>Higher</td></tr>
+      <tr><td><code>google/gemini-2.0-flash-exp</code></td><td>Fast, good balance of cost/quality</td><td>Medium</td></tr>
+      <tr><td><code>meta-llama/llama-3.3-70b-instruct</code></td><td>Open source, self-hostable</td><td>Medium</td></tr>
+    </table>
+
+    <h2>Specialized Configurations</h2>
+
+    <h3>Security-Focused</h3>
+    <pre><code>models: {
+  backendReview: [
+    <span class="code-string">"anthropic/claude-sonnet-4.5"</span>,  <span class="code-comment">// Excellent at security</span>
+    <span class="code-string">"openai/gpt-4o"</span>,
+    <span class="code-string">"deepseek/deepseek-v3.2"</span>,
+  ],
+}</code></pre>
+
+    <h3>Frontend-Focused</h3>
+    <pre><code>models: {
+  frontendReview: [
+    <span class="code-string">"anthropic/claude-sonnet-4.5"</span>,  <span class="code-comment">// Great at accessibility</span>
+    <span class="code-string">"google/gemini-2.0-flash-exp"</span>,  <span class="code-comment">// Fast for iterative work</span>
+  ],
+}</code></pre>
+
+    <h2>Cost Optimization Tips</h2>
+
+    <h3>1. Use Specific Review Types</h3>
+    <p>Instead of "full" reviews, use targeted types to reduce token usage:</p>
+    <pre><code>Use review_backend with review_type=security</code></pre>
+
+    <h3>2. Reduce Max Tokens</h3>
+    <pre><code>{
+  "env": {
+    "MAX_TOKENS": "8000"
+  }
+}</code></pre>
+
+    <h3>3. Use Fewer Models for Routine Reviews</h3>
+    <p>For quick checks, 2 models still provide good coverage:</p>
+    <pre><code>models: {
+  codeReview: [
+    <span class="code-string">"anthropic/claude-sonnet-4"</span>,
+    <span class="code-string">"deepseek/deepseek-v3.2"</span>,
+  ],
+}</code></pre>
+
+    <h2>Model Comparison</h2>
+
+    <table>
+      <tr>
+        <th>Model</th>
+        <th>Speed</th>
+        <th>Quality</th>
+        <th>Cost</th>
+        <th>Security</th>
+      </tr>
+      <tr>
+        <td>Claude Sonnet 4.5</td>
+        <td>Medium</td>
+        <td>Excellent</td>
+        <td>High</td>
+        <td>Excellent</td>
+      </tr>
+      <tr>
+        <td>Claude Opus 4.5</td>
+        <td>Slow</td>
+        <td>Best</td>
+        <td>Highest</td>
+        <td>Excellent</td>
+      </tr>
+      <tr>
+        <td>GPT-4o</td>
+        <td>Medium</td>
+        <td>Excellent</td>
+        <td>High</td>
+        <td>Very Good</td>
+      </tr>
+      <tr>
+        <td>Gemini 2.0 Flash</td>
+        <td>Fast</td>
+        <td>Very Good</td>
+        <td>Medium</td>
+        <td>Good</td>
+      </tr>
+      <tr>
+        <td>DeepSeek V3.2</td>
+        <td>Fast</td>
+        <td>Very Good</td>
+        <td>Low</td>
+        <td>Good</td>
+      </tr>
+      <tr>
+        <td>Kimi K2.5</td>
+        <td>Medium</td>
+        <td>Good</td>
+        <td>Low</td>
+        <td>Good</td>
+      </tr>
+      <tr>
+        <td>Minimax M2.1</td>
+        <td>Fast</td>
+        <td>Good</td>
+        <td>Lowest</td>
+        <td>Moderate</td>
+      </tr>
+    </table>
+
+    <h2>Why Multiple Models Matter</h2>
+
+    <div class="info-box">
+      <p>Different models have different blind spots. When they <strong>agree</strong>, you can be confident. When they <strong>disagree</strong>, you know where to focus.</p>
+    </div>
+
+    <ul>
+      <li><strong>Claude</strong> excels at nuanced security implications and edge cases</li>
+      <li><strong>GPT-4</strong> catches architectural anti-patterns and design issues</li>
+      <li><strong>Gemini</strong> spots performance problems and optimization opportunities</li>
+      <li><strong>DeepSeek</strong> finds edge cases in complex logic</li>
+    </ul>
+
+    <h2>Getting an API Key</h2>
+    <ol>
+      <li>Sign up at <a href="https://openrouter.ai" style="color: var(--blue-light);">OpenRouter</a></li>
+      <li>Go to <a href="https://openrouter.ai/keys" style="color: var(--blue-light);">Keys</a> in your dashboard</li>
+      <li>Create a new API key</li>
+      <li>Add credits at <a href="https://openrouter.ai/credits" style="color: var(--blue-light);">Credits</a></li>
+    </ol>
+
+    <p style="margin-top: 24px;">Browse all available models at <a href="https://openrouter.ai/models" style="color: var(--blue-light);">OpenRouter Models</a>.</p>
+
+  </div>
+
+  <footer>
+    <a href="index.html">Home</a>
+    <a href="tools.html">Tools</a>
+    <a href="configuration.html">Configuration</a>
+    <a href="https://github.com/klitchevo/code-council">GitHub</a>
+  </footer>
+</body>
+</html>
