@@ -110,12 +110,11 @@
 
     /* Sections */
     section {
-      padding: 100px 0 60px;
-      min-height: 100vh;
+      padding: 80px 0 40px;
     }
 
     section:first-of-type {
-      padding-top: 140px;
+      padding-top: 100px;
     }
 
     .section-title {
@@ -160,6 +159,31 @@
       color: var(--text-muted);
       max-width: 600px;
       margin: 0 auto 32px;
+    }
+
+    /* Model indicator animation */
+    .model-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .model-dot-animated {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .model-dot-animated:nth-child(1) { background: var(--orange); animation-delay: 0s; }
+    .model-dot-animated:nth-child(2) { background: var(--green); animation-delay: 0.3s; }
+    .model-dot-animated:nth-child(3) { background: var(--blue); animation-delay: 0.6s; }
+    .model-dot-animated:nth-child(4) { background: var(--purple); animation-delay: 0.9s; }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.3); opacity: 1; }
     }
 
     .hero .cta-buttons {
@@ -265,6 +289,49 @@
       font-weight: 700;
       color: #000;
       font-size: 13px;
+    }
+
+    /* Consensus SVG */
+    .consensus-svg-container {
+      max-width: 900px;
+      margin: 0 auto 40px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .consensus-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* Tools architecture SVG */
+    .tools-arch-svg-container {
+      max-width: 800px;
+      margin: 0 auto 40px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .tools-arch-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* Confidence legend SVG */
+    .confidence-legend-container {
+      max-width: 700px;
+      margin: 0 auto 32px;
+    }
+
+    .confidence-legend-svg {
+      display: block;
+      width: 100%;
+      height: auto;
     }
 
     .flow-step h4 { font-size: 13px; margin-bottom: 4px; }
@@ -549,6 +616,12 @@
     <section id="hero" class="hero">
       <h1>Code Council</h1>
       <p class="tagline">One AI can miss things. A council of AIs catches more.</p>
+      <div class="model-indicator">
+        <div class="model-dot-animated"></div>
+        <div class="model-dot-animated"></div>
+        <div class="model-dot-animated"></div>
+        <div class="model-dot-animated"></div>
+      </div>
       <div class="cta-buttons">
         <a href="#quickstart" class="btn btn-primary">Get Started</a>
         <a href="https://github.com/klitchevo/code-council" class="btn btn-secondary">View on GitHub</a>
@@ -586,6 +659,121 @@
         <p>Your code goes through multiple models simultaneously</p>
       </div>
 
+      <!-- Consensus Flow SVG -->
+      <div class="consensus-svg-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" class="consensus-svg">
+          <defs>
+            <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#0a0a0f"/>
+              <stop offset="100%" style="stop-color:#1a1a2e"/>
+            </linearGradient>
+            <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#10b981"/>
+              <stop offset="100%" style="stop-color:#34d399"/>
+            </linearGradient>
+            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#3b82f6"/>
+              <stop offset="100%" style="stop-color:#60a5fa"/>
+            </linearGradient>
+            <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#8b5cf6"/>
+              <stop offset="100%" style="stop-color:#a78bfa"/>
+            </linearGradient>
+            <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#f59e0b"/>
+              <stop offset="100%" style="stop-color:#fbbf24"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Background -->
+          <rect width="900" height="500" fill="url(#bgGrad)"/>
+
+          <!-- Grid pattern -->
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+          </pattern>
+          <rect width="900" height="500" fill="url(#grid)"/>
+
+          <!-- Title -->
+          <text x="450" y="40" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800">
+            Multi-Model Consensus
+          </text>
+          <text x="450" y="62" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="13">
+            Different models, different strengths, unified insights
+          </text>
+
+          <!-- Model circles -->
+          <g transform="translate(100, 130)">
+            <circle cx="0" cy="0" r="32" fill="rgba(245,158,11,0.2)" stroke="url(#orangeGrad)" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="600">Minimax</text>
+            <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">M2.1</text>
+          </g>
+
+          <g transform="translate(100, 230)">
+            <circle cx="0" cy="0" r="32" fill="rgba(16,185,129,0.2)" stroke="url(#greenGrad)" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" fill="#34d399" font-family="system-ui, sans-serif" font-size="12" font-weight="600">GLM</text>
+            <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">4.7</text>
+          </g>
+
+          <g transform="translate(100, 330)">
+            <circle cx="0" cy="0" r="32" fill="rgba(59,130,246,0.2)" stroke="url(#blueGrad)" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="12" font-weight="600">Kimi</text>
+            <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">K2.5</text>
+          </g>
+
+          <g transform="translate(100, 430)">
+            <circle cx="0" cy="0" r="32" fill="rgba(139,92,246,0.2)" stroke="url(#purpleGrad)" stroke-width="2"/>
+            <text x="0" y="-3" text-anchor="middle" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="12" font-weight="600">DeepSeek</text>
+            <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">V3.2</text>
+          </g>
+
+          <!-- Connection lines -->
+          <g stroke-width="2" fill="none" opacity="0.5">
+            <path d="M 132 130 C 250 130, 300 150, 350 150" stroke="url(#orangeGrad)"/>
+            <path d="M 132 230 C 250 230, 300 155, 350 155" stroke="url(#greenGrad)"/>
+            <path d="M 132 330 C 250 330, 300 160, 350 160" stroke="url(#blueGrad)"/>
+            <path d="M 132 430 C 250 400, 300 165, 350 165" stroke="url(#purpleGrad)"/>
+
+            <path d="M 132 130 C 280 130, 400 280, 450 290" stroke="url(#orangeGrad)"/>
+            <path d="M 132 230 C 280 230, 400 285, 450 295" stroke="url(#greenGrad)"/>
+            <path d="M 132 330 C 280 330, 400 290, 450 300" stroke="url(#blueGrad)"/>
+
+            <path d="M 132 430 C 350 430, 500 420, 550 420" stroke="url(#purpleGrad)" stroke-dasharray="6,4"/>
+          </g>
+
+          <!-- Result boxes -->
+          <g transform="translate(350, 110)">
+            <rect x="0" y="0" width="260" height="80" rx="10" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.4)" stroke-width="1.5"/>
+            <circle cx="24" cy="24" r="10" fill="#10b981"/>
+            <text x="24" y="28" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">✓</text>
+            <text x="44" y="28" fill="#34d399" font-family="system-ui, sans-serif" font-size="14" font-weight="700">UNANIMOUS</text>
+            <text x="175" y="28" fill="rgba(255,255,255,0.4)" font-family="system-ui, sans-serif" font-size="11">4/4 models</text>
+            <text x="24" y="52" fill="rgba(255,255,255,0.85)" font-family="system-ui, sans-serif" font-size="12">SQL Injection in users.ts:42</text>
+            <text x="24" y="70" fill="rgba(255,255,255,0.45)" font-family="system-ui, sans-serif" font-size="11">High confidence - fix this</text>
+          </g>
+
+          <g transform="translate(450, 250)">
+            <rect x="0" y="0" width="260" height="80" rx="10" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.4)" stroke-width="1.5"/>
+            <circle cx="24" cy="24" r="10" fill="#3b82f6"/>
+            <text x="24" y="28" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">≡</text>
+            <text x="44" y="28" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="14" font-weight="700">MAJORITY</text>
+            <text x="160" y="28" fill="rgba(255,255,255,0.4)" font-family="system-ui, sans-serif" font-size="11">3/4 models</text>
+            <text x="24" y="52" fill="rgba(255,255,255,0.85)" font-family="system-ui, sans-serif" font-size="12">Missing input validation</text>
+            <text x="24" y="70" fill="rgba(255,255,255,0.45)" font-family="system-ui, sans-serif" font-size="11">Likely valid - investigate</text>
+          </g>
+
+          <g transform="translate(550, 380)">
+            <rect x="0" y="0" width="260" height="80" rx="10" fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.4)" stroke-width="1.5"/>
+            <circle cx="24" cy="24" r="10" fill="#ef4444"/>
+            <text x="24" y="28" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">?</text>
+            <text x="44" y="28" fill="#f87171" font-family="system-ui, sans-serif" font-size="14" font-weight="700">DISAGREEMENT</text>
+            <text x="195" y="28" fill="rgba(255,255,255,0.4)" font-family="system-ui, sans-serif" font-size="11">split</text>
+            <text x="24" y="52" fill="rgba(255,255,255,0.85)" font-family="system-ui, sans-serif" font-size="12">Token expiration policy</text>
+            <text x="24" y="70" fill="rgba(255,255,255,0.45)" font-family="system-ui, sans-serif" font-size="11">Your judgment needed</text>
+          </g>
+        </svg>
+      </div>
+
       <div class="flow-diagram">
         <div class="flow-step">
           <div class="number">1</div>
@@ -618,6 +806,80 @@
       <div class="section-title">
         <h2>Available Tools</h2>
         <p>Each tool runs your input through multiple AI models in parallel</p>
+      </div>
+
+      <!-- Tools Architecture SVG -->
+      <div class="tools-arch-svg-container">
+        <svg viewBox="0 0 800 200" class="tools-arch-svg">
+          <defs>
+            <linearGradient id="toolsGreen" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#10b981"/>
+              <stop offset="100%" style="stop-color:#34d399"/>
+            </linearGradient>
+            <linearGradient id="centerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#3b82f6"/>
+              <stop offset="100%" style="stop-color:#8b5cf6"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Tool boxes on left -->
+          <g font-family="system-ui, sans-serif">
+            <rect x="20" y="20" width="120" height="32" rx="6" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.4)"/>
+            <text x="80" y="41" text-anchor="middle" fill="#34d399" font-size="11" font-weight="600">review_code</text>
+
+            <rect x="20" y="62" width="120" height="32" rx="6" fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.4)"/>
+            <text x="80" y="83" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="600">review_frontend</text>
+
+            <rect x="20" y="104" width="120" height="32" rx="6" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.4)"/>
+            <text x="80" y="125" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">review_backend</text>
+
+            <rect x="20" y="146" width="120" height="32" rx="6" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.4)"/>
+            <text x="80" y="167" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="600">review_plan</text>
+          </g>
+
+          <!-- Connection lines -->
+          <g stroke="rgba(255,255,255,0.2)" stroke-width="1.5" fill="none">
+            <path d="M 140 36 C 200 36, 220 100, 280 100"/>
+            <path d="M 140 78 C 200 78, 220 100, 280 100"/>
+            <path d="M 140 120 C 200 120, 220 100, 280 100"/>
+            <path d="M 140 162 C 200 162, 220 100, 280 100"/>
+          </g>
+
+          <!-- Central consensus engine -->
+          <g transform="translate(280, 50)">
+            <rect x="0" y="0" width="240" height="100" rx="12" fill="rgba(59,130,246,0.1)" stroke="url(#centerGrad)" stroke-width="2"/>
+            <text x="120" y="30" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="14" font-weight="700">Consensus Engine</text>
+            <text x="120" y="50" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="11">4 models in parallel</text>
+
+            <!-- Mini model dots -->
+            <circle cx="60" cy="75" r="8" fill="#f59e0b"/>
+            <circle cx="90" cy="75" r="8" fill="#10b981"/>
+            <circle cx="150" cy="75" r="8" fill="#3b82f6"/>
+            <circle cx="180" cy="75" r="8" fill="#8b5cf6"/>
+          </g>
+
+          <!-- Output lines -->
+          <g stroke="rgba(255,255,255,0.2)" stroke-width="1.5" fill="none">
+            <path d="M 520 80 C 560 80, 580 50, 620 50"/>
+            <path d="M 520 100 C 560 100, 580 100, 620 100"/>
+            <path d="M 520 120 C 560 120, 580 150, 620 150"/>
+          </g>
+
+          <!-- Output boxes -->
+          <g font-family="system-ui, sans-serif">
+            <rect x="620" y="30" width="160" height="40" rx="8" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.5)"/>
+            <circle cx="640" cy="50" r="8" fill="#10b981"/>
+            <text x="655" y="54" fill="#34d399" font-size="12" font-weight="600">Unanimous</text>
+
+            <rect x="620" y="80" width="160" height="40" rx="8" fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.5)"/>
+            <circle cx="640" cy="100" r="8" fill="#3b82f6"/>
+            <text x="655" y="104" fill="#60a5fa" font-size="12" font-weight="600">Majority</text>
+
+            <rect x="620" y="130" width="160" height="40" rx="8" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.5)"/>
+            <circle cx="640" cy="150" r="8" fill="#ef4444"/>
+            <text x="655" y="154" fill="#f87171" font-size="12" font-weight="600">Disagreement</text>
+          </g>
+        </svg>
       </div>
 
       <div class="tools-grid">
@@ -842,6 +1104,61 @@ npx @klitchevo/code-council init --js --root</code></pre>
       <div class="section-title">
         <h2>Quick Start</h2>
         <p>Add to your Claude Desktop config and start reviewing</p>
+      </div>
+
+      <!-- Confidence Legend SVG -->
+      <div class="confidence-legend-container">
+        <svg viewBox="0 0 700 120" class="confidence-legend-svg">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <text x="350" y="20" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-family="system-ui, sans-serif" font-size="12" font-weight="600">
+            UNDERSTANDING YOUR RESULTS
+          </text>
+
+          <!-- Unanimous -->
+          <g transform="translate(30, 45)">
+            <rect x="0" y="0" width="150" height="60" rx="8" fill="rgba(16,185,129,0.1)" stroke="rgba(16,185,129,0.4)"/>
+            <circle cx="25" cy="30" r="14" fill="#10b981" filter="url(#glow)"/>
+            <text x="25" y="35" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">✓</text>
+            <text x="50" y="25" fill="#34d399" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Unanimous</text>
+            <text x="50" y="42" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">All models agree</text>
+          </g>
+
+          <!-- Majority -->
+          <g transform="translate(200, 45)">
+            <rect x="0" y="0" width="150" height="60" rx="8" fill="rgba(59,130,246,0.1)" stroke="rgba(59,130,246,0.4)"/>
+            <circle cx="25" cy="30" r="14" fill="#3b82f6" filter="url(#glow)"/>
+            <text x="25" y="35" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">≡</text>
+            <text x="50" y="25" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Majority</text>
+            <text x="50" y="42" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">Most models agree</text>
+          </g>
+
+          <!-- Disagreement -->
+          <g transform="translate(370, 45)">
+            <rect x="0" y="0" width="150" height="60" rx="8" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.4)"/>
+            <circle cx="25" cy="30" r="14" fill="#ef4444" filter="url(#glow)"/>
+            <text x="25" y="35" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">?</text>
+            <text x="50" y="25" fill="#f87171" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Disagreement</text>
+            <text x="50" y="42" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">Models conflict</text>
+          </g>
+
+          <!-- Single -->
+          <g transform="translate(540, 45)">
+            <rect x="0" y="0" width="130" height="60" rx="8" fill="rgba(139,92,246,0.1)" stroke="rgba(139,92,246,0.4)"/>
+            <circle cx="25" cy="30" r="14" fill="#8b5cf6" filter="url(#glow)"/>
+            <text x="25" y="35" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">1</text>
+            <text x="50" y="25" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Single</text>
+            <text x="50" y="42" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">One model only</text>
+          </g>
+        </svg>
       </div>
 
       <div class="quickstart-box">
