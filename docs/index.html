@@ -186,8 +186,8 @@
 
     .tools-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 24px;
     }
 
     .tool-card {
@@ -198,6 +198,7 @@
       display: flex;
       gap: 16px;
       transition: all 0.2s;
+      align-items: flex-start;
     }
 
     .tool-card:hover {
@@ -226,6 +227,11 @@
     .tool-card.plan .tool-icon { background: linear-gradient(135deg, var(--orange), var(--orange-light)); }
     .tool-card.git .tool-icon { background: linear-gradient(135deg, #f43f5e, #fb7185); }
     .tool-card.discuss .tool-icon { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+    .tool-card.tps .tool-icon { background: linear-gradient(135deg, #ec4899, #f472b6); }
+
+    .tool-content {
+      flex: 1;
+    }
 
     .tool-content h3 {
       font-size: 16px;
@@ -234,10 +240,75 @@
       font-family: 'SF Mono', 'Fira Code', monospace;
     }
 
-    .tool-content p {
+    .tool-content > p {
       color: var(--text-muted);
       font-size: 14px;
       line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .tool-details {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .tool-example {
+      margin-bottom: 12px;
+    }
+
+    .tool-example-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .tool-example-code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--green-light);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    .tool-params {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tool-param {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    .tool-param.required {
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--green-light);
+    }
+
+    .tool-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tool-feature {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
     }
 
     /* Quick start */
@@ -342,6 +413,7 @@
         <p>Each tool runs your input through multiple AI models in parallel</p>
       </div>
       <div class="tools-grid">
+        <!-- review_code -->
         <div class="tool-card code">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
@@ -350,9 +422,23 @@
           </div>
           <div class="tool-content">
             <h3>review_code</h3>
-            <p>General code review for bugs, security, performance, and quality issues.</p>
+            <p>General code review for bugs, security, performance, and quality issues across any language.</p>
+            <div class="tool-details">
+              <div class="tool-example">
+                <div class="tool-example-label">Example</div>
+                <div class="tool-example-code">Use review_code to check this function: [paste code]</div>
+              </div>
+              <div class="tool-params">
+                <span class="tool-param required">code*</span>
+                <span class="tool-param">language</span>
+                <span class="tool-param">context</span>
+                <span class="tool-param">output_format</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- review_frontend -->
         <div class="tool-card frontend">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
@@ -362,9 +448,28 @@
           </div>
           <div class="tool-content">
             <h3>review_frontend</h3>
-            <p>Accessibility, performance, and UX review for React, Vue, and other frameworks.</p>
+            <p>Specialized review for UI code focusing on accessibility, performance, and user experience.</p>
+            <div class="tool-details">
+              <div class="tool-example">
+                <div class="tool-example-label">Example</div>
+                <div class="tool-example-code">Use review_frontend with review_type=accessibility to check this React component</div>
+              </div>
+              <div class="tool-params">
+                <span class="tool-param required">code*</span>
+                <span class="tool-param">framework</span>
+                <span class="tool-param">review_type</span>
+              </div>
+              <div class="tool-features">
+                <span class="tool-feature">React</span>
+                <span class="tool-feature">Vue</span>
+                <span class="tool-feature">Svelte</span>
+                <span class="tool-feature">WCAG</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- review_backend -->
         <div class="tool-card backend">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
@@ -374,9 +479,27 @@
           </div>
           <div class="tool-content">
             <h3>review_backend</h3>
-            <p>Security, architecture, and performance analysis for APIs and servers.</p>
+            <p>Security-focused review for APIs, servers, and backend services. Catches auth issues, injection vulnerabilities, and architectural problems.</p>
+            <div class="tool-details">
+              <div class="tool-example">
+                <div class="tool-example-label">Example</div>
+                <div class="tool-example-code">Use review_backend with review_type=security to analyze this API endpoint</div>
+              </div>
+              <div class="tool-params">
+                <span class="tool-param required">code*</span>
+                <span class="tool-param">language</span>
+                <span class="tool-param">review_type</span>
+              </div>
+              <div class="tool-features">
+                <span class="tool-feature">Security</span>
+                <span class="tool-feature">Performance</span>
+                <span class="tool-feature">Architecture</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- review_plan -->
         <div class="tool-card plan">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
@@ -386,9 +509,27 @@
           </div>
           <div class="tool-content">
             <h3>review_plan</h3>
-            <p>Review implementation plans before coding. Catch design issues early.</p>
+            <p>Review implementation plans BEFORE coding. Catch design issues, missing edge cases, and risks early when they're cheap to fix.</p>
+            <div class="tool-details">
+              <div class="tool-example">
+                <div class="tool-example-label">Example</div>
+                <div class="tool-example-code">Use review_plan to analyze this implementation plan: [paste plan]</div>
+              </div>
+              <div class="tool-params">
+                <span class="tool-param required">plan*</span>
+                <span class="tool-param">review_type</span>
+                <span class="tool-param">context</span>
+              </div>
+              <div class="tool-features">
+                <span class="tool-feature">Feasibility</span>
+                <span class="tool-feature">Completeness</span>
+                <span class="tool-feature">Risks</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- review_git_changes -->
         <div class="tool-card git">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
@@ -399,9 +540,28 @@
           </div>
           <div class="tool-content">
             <h3>review_git_changes</h3>
-            <p>Review staged changes, diffs, or specific commits directly from your repo.</p>
+            <p>Review git changes directly from your repo. Works with staged changes, unstaged changes, branch diffs, or specific commits.</p>
+            <div class="tool-details">
+              <div class="tool-example">
+                <div class="tool-example-label">Example</div>
+                <div class="tool-example-code">Use review_git_changes with review_type=staged to review my staged changes</div>
+              </div>
+              <div class="tool-params">
+                <span class="tool-param">review_type</span>
+                <span class="tool-param">commit_hash</span>
+                <span class="tool-param">context</span>
+              </div>
+              <div class="tool-features">
+                <span class="tool-feature">Staged</span>
+                <span class="tool-feature">Unstaged</span>
+                <span class="tool-feature">Branch diff</span>
+                <span class="tool-feature">Commit</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- discuss_with_council -->
         <div class="tool-card discuss">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
@@ -410,7 +570,54 @@
           </div>
           <div class="tool-content">
             <h3>discuss_with_council</h3>
-            <p>Multi-turn conversations with the AI council. Ask follow-ups with context.</p>
+            <p>Multi-turn conversations with the AI council. Each model maintains its own context for authentic diverse perspectives. Ask follow-up questions.</p>
+            <div class="tool-details">
+              <div class="tool-example">
+                <div class="tool-example-label">Example</div>
+                <div class="tool-example-code">Use discuss_with_council to ask: What's the best way to implement caching here?</div>
+              </div>
+              <div class="tool-params">
+                <span class="tool-param required">message*</span>
+                <span class="tool-param">session_id</span>
+                <span class="tool-param">discussion_type</span>
+              </div>
+              <div class="tool-features">
+                <span class="tool-feature">Multi-turn</span>
+                <span class="tool-feature">Context preserved</span>
+                <span class="tool-feature">30min sessions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- tps_audit -->
+        <div class="tool-card tps">
+          <div class="tool-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+              <path d="M3 3v18h18"/>
+              <path d="M18 9l-5-6-4 8-3-2"/>
+            </svg>
+          </div>
+          <div class="tool-content">
+            <h3>tps_audit</h3>
+            <p>Toyota Production System analysis for your codebase. Identifies flow inefficiencies, waste, bottlenecks, and quality issues. Generates beautiful HTML reports.</p>
+            <div class="tool-details">
+              <div class="tool-example">
+                <div class="tool-example-label">Example</div>
+                <div class="tool-example-code">Use tps_audit to analyze this repository with focus_areas=["security", "performance"]</div>
+              </div>
+              <div class="tool-params">
+                <span class="tool-param">path</span>
+                <span class="tool-param">focus_areas</span>
+                <span class="tool-param">max_files</span>
+                <span class="tool-param">output_format</span>
+              </div>
+              <div class="tool-features">
+                <span class="tool-feature">Flow analysis</span>
+                <span class="tool-feature">Waste detection</span>
+                <span class="tool-feature">HTML reports</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
