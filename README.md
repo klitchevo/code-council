@@ -7,6 +7,8 @@
 [![CI](https://github.com/klitchevo/code-council/workflows/CI/badge.svg)](https://github.com/klitchevo/code-council/actions)
 [![codecov](https://codecov.io/gh/klitchevo/code-council/branch/main/graph/badge.svg)](https://codecov.io/gh/klitchevo/code-council)
 
+**[View Documentation](https://klitchevo.github.io/code-council/)** | [npm](https://www.npmjs.com/package/@klitchevo/code-council)
+
 Code Council runs your code through multiple AI models simultaneously, then shows you where they **agree**, where they **disagree**, and what **only one model caught**.
 
 ![Code Council](assets/code-council.png)
@@ -170,6 +172,7 @@ MIT
 
 ## Links
 
+- [Documentation](https://klitchevo.github.io/code-council/) - Full docs and examples
 - [OpenRouter](https://openrouter.ai) - Multi-model AI API
 - [Model Context Protocol](https://modelcontextprotocol.io) - MCP specification
 - [Claude Desktop](https://claude.ai/download) - MCP-compatible AI assistant
