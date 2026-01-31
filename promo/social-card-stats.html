@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Council - Stats Card</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 1200px;
+      height: 675px;
+      background: #0a0a0a;
+      border-radius: 0;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Grid pattern background */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* Gradient accent */
+    .accent-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6, #f59e0b);
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 48px;
+    }
+
+    h1 {
+      font-size: 64px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 12px;
+      font-weight: 400;
+    }
+
+    .badge {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    /* Big stats row */
+    .big-stats {
+      display: flex;
+      gap: 80px;
+      margin-bottom: 48px;
+    }
+
+    .big-stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .big-stat-value {
+      font-size: 120px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -6px;
+    }
+
+    .big-stat-value.green {
+      color: #10b981;
+    }
+
+    .big-stat-value.blue {
+      color: #3b82f6;
+    }
+
+    .big-stat-value.purple {
+      color: #8b5cf6;
+    }
+
+    .big-stat-label {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: 8px;
+    }
+
+    /* Model row */
+    .models-row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+
+    .model-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .model-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .model-dot.orange { background: #f59e0b; }
+    .model-dot.green { background: #10b981; }
+    .model-dot.blue { background: #3b82f6; }
+    .model-dot.purple { background: #8b5cf6; }
+
+    .model-name {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 600;
+    }
+
+    /* Bottom section */
+    .bottom {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .features {
+      display: flex;
+      gap: 40px;
+    }
+
+    .feature {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      color: #10b981;
+    }
+
+    .feature-text {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .github {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.4);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* Highlight box */
+    .highlight-box {
+      position: absolute;
+      right: 60px;
+      top: 180px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 24px 32px;
+      max-width: 320px;
+    }
+
+    .highlight-text {
+      font-size: 18px;
+      color: #10b981;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .highlight-arrow {
+      font-size: 24px;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="accent-line"></div>
+
+    <div class="content">
+      <div class="header">
+        <div>
+          <h1>Code Council</h1>
+          <div class="subtitle">Multi-model AI code review</div>
+        </div>
+        <div class="badge">v0.1.1 | MCP SERVER</div>
+      </div>
+
+      <div class="big-stats">
+        <div class="big-stat">
+          <div class="big-stat-value green">4+</div>
+          <div class="big-stat-label">AI Models</div>
+        </div>
+        <div class="big-stat">
+          <div class="big-stat-value blue">1</div>
+          <div class="big-stat-label">Consensus</div>
+        </div>
+        <div class="big-stat">
+          <div class="big-stat-value purple">0</div>
+          <div class="big-stat-label">Blind Spots</div>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div class="highlight-text">
+          <span class="highlight-arrow">-></span>When all models agree, it's definitely a bug
+        </div>
+      </div>
+
+      <div class="models-row">
+        <div class="model-pill">
+          <div class="model-dot orange"></div>
+          <div class="model-name">Minimax M2.1</div>
+        </div>
+        <div class="model-pill">
+          <div class="model-dot green"></div>
+          <div class="model-name">GLM 4.7</div>
+        </div>
+        <div class="model-pill">
+          <div class="model-dot blue"></div>
+          <div class="model-name">Kimi K2.5</div>
+        </div>
+        <div class="model-pill">
+          <div class="model-dot purple"></div>
+          <div class="model-name">DeepSeek V3.2</div>
+        </div>
+        <div class="model-pill">
+          <div class="model-dot orange"></div>
+          <div class="model-name">Claude Sonnet</div>
+        </div>
+        <div class="model-pill">
+          <div class="model-dot green"></div>
+          <div class="model-name">GPT-4o</div>
+        </div>
+      </div>
+
+      <div class="bottom">
+        <div class="features">
+          <div class="feature">
+            <div class="feature-text">Parallel execution</div>
+          </div>
+          <div class="feature">
+            <div class="feature-text">Consensus clustering</div>
+          </div>
+          <div class="feature">
+            <div class="feature-text">Confidence scoring</div>
+          </div>
+          <div class="feature">
+            <div class="feature-text">Git integration</div>
+          </div>
+        </div>
+        <div class="github">github.com/klitchevo/code-council</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

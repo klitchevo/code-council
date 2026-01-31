@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Council - Social Card</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 1200px;
+      height: 675px;
+      background: linear-gradient(145deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.95) 100%);
+      border-radius: 24px;
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Glowing orbs background */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      bottom: -150px;
+      left: -100px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-section h1 {
+      font-size: 44px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -1px;
+    }
+
+    .tagline {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 6px;
+      font-weight: 400;
+    }
+
+    .version-badge {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
+
+    .left-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Council visualization */
+    .council-viz {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .council-title {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .models-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .model-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .model-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .model-icon.claude { background: linear-gradient(135deg, #d97706, #f59e0b); color: #000; }
+    .model-icon.gpt { background: linear-gradient(135deg, #10b981, #34d399); color: #000; }
+    .model-icon.gemini { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: #fff; }
+    .model-icon.deepseek { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: #fff; }
+
+    .model-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .model-type {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Stats section */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #10b981, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.purple {
+      background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.blue {
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Categories in left section */
+    .categories {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .categories-title {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .category-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .category-tag {
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .category-tag.security { color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
+    .category-tag.performance { color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
+    .category-tag.bug { color: #fb923c; border-color: rgba(251, 146, 60, 0.3); }
+    .category-tag.architecture { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); }
+    .category-tag.accessibility { color: #c084fc; border-color: rgba(192, 132, 252, 0.3); }
+
+    /* Right section - Consensus chart */
+    .right-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .consensus-chart {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      flex: 1;
+    }
+
+    .chart-title {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .consensus-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .consensus-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .consensus-label {
+      width: 80px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+    }
+
+    .bar-container {
+      flex: 1;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(0, 0, 0, 0.8);
+    }
+
+    .bar.unanimous {
+      width: 95%;
+      background: linear-gradient(90deg, #10b981, #34d399);
+    }
+
+    .bar.majority {
+      width: 75%;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
+
+    .bar.minority {
+      width: 45%;
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+
+    .bar.single {
+      width: 25%;
+      background: linear-gradient(90deg, #6b7280, #9ca3af);
+    }
+
+    .consensus-desc {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-left: 92px;
+      margin-top: -4px;
+    }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+      z-index: 1;
+    }
+
+    .mcp-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mcp-badge span {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .github-url {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.4);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="logo-section">
+        <h1>Code Council</h1>
+        <div class="tagline">Multi-model AI code review with consensus analysis</div>
+      </div>
+      <div class="version-badge">v0.1.1 | MCP Server</div>
+    </div>
+
+    <div class="main-content">
+      <div class="left-section">
+        <div class="council-viz">
+          <div class="council-title">The Council</div>
+          <div class="models-grid">
+            <div class="model-card">
+              <div class="model-icon claude">M</div>
+              <div>
+                <div class="model-name">Minimax M2.1</div>
+                <div class="model-type">Minimax</div>
+              </div>
+            </div>
+            <div class="model-card">
+              <div class="model-icon gpt">G</div>
+              <div>
+                <div class="model-name">GLM 4.7</div>
+                <div class="model-type">Z-AI</div>
+              </div>
+            </div>
+            <div class="model-card">
+              <div class="model-icon gemini">K</div>
+              <div>
+                <div class="model-name">Kimi K2.5</div>
+                <div class="model-type">Moonshot AI</div>
+              </div>
+            </div>
+            <div class="model-card">
+              <div class="model-icon deepseek">D</div>
+              <div>
+                <div class="model-name">DeepSeek V3.2</div>
+                <div class="model-type">DeepSeek</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">4+</div>
+            <div class="stat-label">Models</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value purple">10</div>
+            <div class="stat-label">Categories</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value blue">6</div>
+            <div class="stat-label">Review Types</div>
+          </div>
+        </div>
+
+        <div class="categories">
+          <div class="categories-title">Finding Categories</div>
+          <div class="category-tags">
+            <span class="category-tag security">Security</span>
+            <span class="category-tag performance">Performance</span>
+            <span class="category-tag bug">Bugs</span>
+            <span class="category-tag architecture">Architecture</span>
+            <span class="category-tag accessibility">Accessibility</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-section">
+        <div class="consensus-chart">
+          <div class="chart-title">Consensus Confidence Levels</div>
+          <div class="consensus-bars">
+            <div class="consensus-row">
+              <div class="consensus-label">Unanimous</div>
+              <div class="bar-container">
+                <div class="bar unanimous">HIGH</div>
+              </div>
+            </div>
+            <div class="consensus-desc">All models agree - definitely fix this</div>
+
+            <div class="consensus-row">
+              <div class="consensus-label">Majority</div>
+              <div class="bar-container">
+                <div class="bar majority">MODERATE</div>
+              </div>
+            </div>
+            <div class="consensus-desc">Most models agree - likely an issue</div>
+
+            <div class="consensus-row">
+              <div class="consensus-label">Minority</div>
+              <div class="bar-container">
+                <div class="bar minority">LOW</div>
+              </div>
+            </div>
+            <div class="consensus-desc">Some models flagged - worth reviewing</div>
+
+            <div class="consensus-row">
+              <div class="consensus-label">Single</div>
+              <div class="bar-container">
+                <div class="bar single">INFO</div>
+              </div>
+            </div>
+            <div class="consensus-desc">One model's opinion - may be noise</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="mcp-badge">
+        <span>Works with Claude Desktop, Cursor & MCP clients</span>
+      </div>
+      <div class="github-url">github.com/klitchevo/code-council</div>
+    </div>
+  </div>
+</body>
+</html>

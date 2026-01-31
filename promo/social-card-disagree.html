@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Council - Disagreement Card</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 1200px;
+      height: 675px;
+      background: linear-gradient(180deg, #0f0f0f 0%, #1a0a0a 100%);
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Dramatic red glow */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(239, 68, 68, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Main headline */
+    .headline {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .headline h1 {
+      font-size: 72px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -3px;
+      line-height: 1.1;
+    }
+
+    .headline .highlight {
+      color: #ef4444;
+    }
+
+    .headline .subtitle {
+      font-size: 24px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 16px;
+      font-weight: 400;
+    }
+
+    /* Chat bubbles showing disagreement */
+    .chat-section {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 48px;
+    }
+
+    .chat-bubble {
+      max-width: 300px;
+      padding: 20px 24px;
+      border-radius: 16px;
+      position: relative;
+    }
+
+    .chat-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      width: 20px;
+      height: 20px;
+      transform: rotate(45deg);
+    }
+
+    .chat-bubble.left {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .chat-bubble.left::after {
+      left: 30px;
+      background: rgba(16, 185, 129, 0.15);
+      border-right: 1px solid rgba(16, 185, 129, 0.3);
+      border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .chat-bubble.right {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .chat-bubble.right::after {
+      right: 30px;
+      background: rgba(239, 68, 68, 0.15);
+      border-right: 1px solid rgba(239, 68, 68, 0.3);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .chat-bubble.center {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .chat-bubble.center::after {
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      background: rgba(59, 130, 246, 0.15);
+      border-right: 1px solid rgba(59, 130, 246, 0.3);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .chat-model {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .chat-bubble.left .chat-model { color: #10b981; }
+    .chat-bubble.right .chat-model { color: #ef4444; }
+    .chat-bubble.center .chat-model { color: #3b82f6; }
+
+    .chat-text {
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.4;
+    }
+
+    /* Arrow and consensus */
+    .consensus-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .arrow-down {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 24px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .consensus-result {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      padding: 16px 32px;
+      border-radius: 12px;
+    }
+
+    .check-icon {
+      width: 32px;
+      height: 32px;
+      background: #10b981;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .consensus-text {
+      font-size: 20px;
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    /* Bottom */
+    .bottom {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-text {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .logo-sub {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .cta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .cta-text {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .github {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.8);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="content">
+      <div class="headline">
+        <h1>AIs <span class="highlight">disagree</span> about your code</h1>
+        <div class="subtitle">That's actually useful information</div>
+      </div>
+
+      <div class="chat-section">
+        <div class="chat-bubble left">
+          <div class="chat-model">Kimi K2.5</div>
+          <div class="chat-text">"This looks like a potential SQL injection vulnerability"</div>
+        </div>
+
+        <div class="chat-bubble center">
+          <div class="chat-model">DeepSeek V3.2</div>
+          <div class="chat-text">"Agreed. The input isn't sanitized before the query"</div>
+        </div>
+
+        <div class="chat-bubble right">
+          <div class="chat-model">Minimax M2.1</div>
+          <div class="chat-text">"False positive - the ORM handles escaping"</div>
+        </div>
+      </div>
+
+      <div class="consensus-section">
+        <div class="arrow-down"></div>
+        <div class="consensus-result">
+          <div class="check-icon">!</div>
+          <div class="consensus-text">Majority consensus: Worth investigating</div>
+        </div>
+      </div>
+
+      <div class="bottom">
+        <div class="logo">
+          <div>
+            <div class="logo-text">Code Council</div>
+            <div class="logo-sub">v0.1.1 | Multi-model code review with consensus analysis</div>
+          </div>
+        </div>
+        <div class="cta">
+          <div class="cta-text">Run multiple AIs in parallel, see where they agree</div>
+          <div class="github">github.com/klitchevo/code-council</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

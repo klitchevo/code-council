@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0f"/>
+      <stop offset="100%" style="stop-color:#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#34d399"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#60a5fa"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#fbbf24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="url(#bgGrad)"/>
+
+  <!-- Subtle grid pattern -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+  </pattern>
+  <rect width="900" height="500" fill="url(#grid)"/>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="800">
+    Code Council
+  </text>
+  <text x="450" y="65" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="14">
+    Multi-model consensus analysis
+  </text>
+
+  <!-- Model circles on left - more spread out -->
+  <!-- Model 1 - Minimax -->
+  <g transform="translate(100, 130)">
+    <circle cx="0" cy="0" r="32" fill="rgba(245,158,11,0.2)" stroke="url(#orangeGrad)" stroke-width="2"/>
+    <text x="0" y="-3" text-anchor="middle" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="600">Minimax</text>
+    <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">M2.1</text>
+  </g>
+
+  <!-- Model 2 - GLM -->
+  <g transform="translate(100, 230)">
+    <circle cx="0" cy="0" r="32" fill="rgba(16,185,129,0.2)" stroke="url(#greenGrad)" stroke-width="2"/>
+    <text x="0" y="-3" text-anchor="middle" fill="#34d399" font-family="system-ui, sans-serif" font-size="12" font-weight="600">GLM</text>
+    <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">4.7</text>
+  </g>
+
+  <!-- Model 3 - Kimi -->
+  <g transform="translate(100, 330)">
+    <circle cx="0" cy="0" r="32" fill="rgba(59,130,246,0.2)" stroke="url(#blueGrad)" stroke-width="2"/>
+    <text x="0" y="-3" text-anchor="middle" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="12" font-weight="600">Kimi</text>
+    <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">K2.5</text>
+  </g>
+
+  <!-- Model 4 - DeepSeek -->
+  <g transform="translate(100, 430)">
+    <circle cx="0" cy="0" r="32" fill="rgba(139,92,246,0.2)" stroke="url(#purpleGrad)" stroke-width="2"/>
+    <text x="0" y="-3" text-anchor="middle" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="12" font-weight="600">DeepSeek</text>
+    <text x="0" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="system-ui, sans-serif" font-size="10">V3.2</text>
+  </g>
+
+  <!-- Connection lines -->
+  <g stroke-width="2" fill="none" opacity="0.5">
+    <!-- All 4 models to Unanimous -->
+    <path d="M 132 130 C 250 130, 300 150, 350 150" stroke="url(#orangeGrad)"/>
+    <path d="M 132 230 C 250 230, 300 155, 350 155" stroke="url(#greenGrad)"/>
+    <path d="M 132 330 C 250 330, 300 160, 350 160" stroke="url(#blueGrad)"/>
+    <path d="M 132 430 C 250 400, 300 165, 350 165" stroke="url(#purpleGrad)"/>
+
+    <!-- 3 models to Majority -->
+    <path d="M 132 130 C 280 130, 400 280, 450 290" stroke="url(#orangeGrad)"/>
+    <path d="M 132 230 C 280 230, 400 285, 450 295" stroke="url(#greenGrad)"/>
+    <path d="M 132 330 C 280 330, 400 290, 450 300" stroke="url(#blueGrad)"/>
+
+    <!-- 1 model diverges to Disagreement -->
+    <path d="M 132 430 C 350 430, 500 420, 550 420" stroke="url(#purpleGrad)" stroke-dasharray="6,4"/>
+  </g>
+
+  <!-- Result boxes on right - properly spaced -->
+
+  <!-- Unanimous finding -->
+  <g transform="translate(350, 110)">
+    <rect x="0" y="0" width="260" height="80" rx="10" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.4)" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="10" fill="#10b981"/>
+    <text x="24" y="28" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">✓</text>
+    <text x="44" y="28" fill="#34d399" font-family="system-ui, sans-serif" font-size="14" font-weight="700">UNANIMOUS</text>
+    <text x="175" y="28" fill="rgba(255,255,255,0.4)" font-family="system-ui, sans-serif" font-size="11">4/4 models</text>
+    <text x="24" y="52" fill="rgba(255,255,255,0.85)" font-family="system-ui, sans-serif" font-size="12">SQL Injection in users.ts:42</text>
+    <text x="24" y="70" fill="rgba(255,255,255,0.45)" font-family="system-ui, sans-serif" font-size="11">High confidence - fix this</text>
+  </g>
+
+  <!-- Majority finding -->
+  <g transform="translate(450, 250)">
+    <rect x="0" y="0" width="260" height="80" rx="10" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.4)" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="10" fill="#3b82f6"/>
+    <text x="24" y="28" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">≡</text>
+    <text x="44" y="28" fill="#60a5fa" font-family="system-ui, sans-serif" font-size="14" font-weight="700">MAJORITY</text>
+    <text x="160" y="28" fill="rgba(255,255,255,0.4)" font-family="system-ui, sans-serif" font-size="11">3/4 models</text>
+    <text x="24" y="52" fill="rgba(255,255,255,0.85)" font-family="system-ui, sans-serif" font-size="12">Missing input validation</text>
+    <text x="24" y="70" fill="rgba(255,255,255,0.45)" font-family="system-ui, sans-serif" font-size="11">Likely valid - investigate</text>
+  </g>
+
+  <!-- Disagreement -->
+  <g transform="translate(550, 380)">
+    <rect x="0" y="0" width="260" height="80" rx="10" fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.4)" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="10" fill="#ef4444"/>
+    <text x="24" y="28" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">?</text>
+    <text x="44" y="28" fill="#f87171" font-family="system-ui, sans-serif" font-size="14" font-weight="700">DISAGREEMENT</text>
+    <text x="195" y="28" fill="rgba(255,255,255,0.4)" font-family="system-ui, sans-serif" font-size="11">split</text>
+    <text x="24" y="52" fill="rgba(255,255,255,0.85)" font-family="system-ui, sans-serif" font-size="12">Token expiration policy</text>
+    <text x="24" y="70" fill="rgba(255,255,255,0.45)" font-family="system-ui, sans-serif" font-size="11">Your judgment needed</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="450" y="485" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="12">
+    github.com/klitchevo/code-council
+  </text>
+</svg>

@@ -1,36 +1,76 @@
 # Code Council
 
+**One AI can miss things. A council of AIs catches more.**
+
 [![npm version](https://img.shields.io/npm/v/@klitchevo/code-council.svg)](https://www.npmjs.com/package/@klitchevo/code-council)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/klitchevo/code-council/workflows/CI/badge.svg)](https://github.com/klitchevo/code-council/actions)
 [![codecov](https://codecov.io/gh/klitchevo/code-council/branch/main/graph/badge.svg)](https://codecov.io/gh/klitchevo/code-council)
 
+Code Council runs your code through multiple AI models simultaneously, then shows you where they **agree**, where they **disagree**, and what **only one model caught**.
+
 ![Code Council](assets/code-council.png)
 
-**Your AI Code Review Council** - Get diverse perspectives from multiple AI models in parallel.
+## Example Output
 
-An MCP (Model Context Protocol) server that provides AI-powered code review using multiple models from [OpenRouter](https://openrouter.ai). Think of it as assembling a council of AI experts to review your code, each bringing their unique perspective.
+```
+## Consensus Analysis
 
-## Features
+### Unanimous (All 4 models agree) - High Confidence
 
-- 🔍 **Multi-Model Code Review** - Get diverse perspectives by running reviews across multiple AI models simultaneously
-- 🎨 **Frontend Review** - Specialized reviews for accessibility, performance, and UX
-- 🔒 **Backend Review** - Security, architecture, and performance analysis
-- 📋 **Plan Review** - Review implementation plans before writing code
-- 📝 **Git Changes Review** - Review staged, unstaged, branch diffs, or specific commits
-- 💬 **Council Discussions** - Multi-turn conversations with the AI council for deeper exploration
-- 🏭 **TPS Audit** - Toyota Production System analysis for flow, waste, bottlenecks, and quality
-- ⚡ **Parallel Execution** - All models run concurrently for fast results
+**Critical: SQL Injection Vulnerability**
+Location: src/api/users.ts:42
+
+The user input is directly interpolated into the SQL query without sanitization.
+Use parameterized queries instead.
+
+---
+
+### Majority (3 of 4 models) - Moderate Confidence
+
+**High: Missing Input Validation**
+Location: src/api/users.ts:38
+
+The userId parameter is used without validation. Add type checking.
+
+---
+
+### Disagreement - Your Judgment Needed
+
+**Session Token Expiration**
+Location: src/api/auth.ts:28
+
+- Kimi K2.5: "Tokens should expire after 24 hours"
+- DeepSeek V3.2: "Current 7-day expiration is reasonable for this use case"
+- Minimax M2.1: "No issue found"
+
+---
+
+### Single Model Finding - Worth Checking
+
+**Low: Magic Number**
+Location: src/utils/pagination.ts:12
+Found by: GLM 4.7
+
+The value 20 should be extracted to a named constant.
+```
+
+## Why Multiple Models?
+
+Different AI models have different strengths:
+
+- **One model** might miss a security issue another catches
+- **Unanimous findings** are almost certainly real problems
+- **Disagreements** highlight where you should look closer
+- **Single-model findings** might be noise, or might be the one model that saw something others missed
+
+Think of it as getting 4 senior engineers to review your code at once.
+
+![How Consensus Works](assets/consensus-demo.svg)
 
 ## Quick Start
 
-### Using with npx (Recommended)
-
-The easiest way to use this MCP server is via npx. Configure your MCP client with environment variable for the API key:
-
-#### Claude Desktop
-
-Add to your `claude_desktop_config.json`:
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
 {
@@ -46,576 +86,87 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-**With custom models:**
+Get your API key at [OpenRouter](https://openrouter.ai/keys).
 
-```json
-{
-  "mcpServers": {
-    "code-council": {
-      "command": "npx",
-      "args": ["-y", "@klitchevo/code-council"],
-      "env": {
-        "OPENROUTER_API_KEY": "your-api-key-here",
-        "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5", "openai/gpt-4o"],
-        "FRONTEND_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5"],
-        "BACKEND_REVIEW_MODELS": ["openai/gpt-4o", "google/gemini-2.0-flash-exp"]
-      }
-    }
-  }
-}
-```
+That's it. Ask Claude: *"Use review_code to check this function: [paste code]"*
 
-#### Cursor
+> **More setup options:** See [Configuration Guide](docs/configuration.md) for Cursor, VS Code, custom models, and advanced options.
 
-Add to your Cursor MCP settings (`.cursor/mcp.json` or similar):
+## Use Cases
 
-```json
-{
-  "mcpServers": {
-    "code-council": {
-      "command": "npx",
-      "args": ["-y", "@klitchevo/code-council"],
-      "env": {
-        "OPENROUTER_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
+| Scenario | Tool | What You Get |
+|----------|------|--------------|
+| About to merge a PR | `review_git_changes` | Multi-model review of your diff |
+| Planning a refactor | `review_plan` | Catch design issues before coding |
+| Reviewing React components | `review_frontend` | Accessibility + performance + UX focus |
+| Securing an API endpoint | `review_backend` | Security + architecture analysis |
+| Want deeper discussion | `discuss_with_council` | Multi-turn conversation with context |
+| Audit entire codebase | `tps_audit` | Flow, waste, bottlenecks analysis |
 
-#### Other MCP Clients
+> **Full tool reference:** See [Tools Reference](docs/tools-reference.md) for all parameters and examples.
 
-For any MCP client that supports environment variables:
+## Reading the Results
 
-```json
-{
-  "command": "npx",
-  "args": ["-y", "@klitchevo/code-council"],
-  "env": {
-    "OPENROUTER_API_KEY": "your-openrouter-api-key"
-  }
-}
-```
+Code Council shows confidence levels for each finding:
 
-### Installation (Alternative)
-
-If you prefer to install globally:
-
-```bash
-npm install -g @klitchevo/code-council
-```
-
-Then configure without npx:
-
-```json
-{
-  "mcpServers": {
-    "code-council": {
-      "command": "@klitchevo/code-council",
-      "env": {
-        "OPENROUTER_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-## Getting an API Key
-
-1. Sign up at [OpenRouter](https://openrouter.ai)
-2. Go to [Keys](https://openrouter.ai/keys) in your dashboard
-3. Create a new API key
-4. Add credits to your account at [Credits](https://openrouter.ai/credits)
-
-## Security Best Practices
-
-⚠️ **CRITICAL SECURITY WARNING**: Never commit your OpenRouter API key to git!
-
-### MCP Config File Locations (Safe - Not in Git)
-
-MCP client configurations are stored **outside your project directory** and won't be committed:
-
-- **Claude Desktop**:
-  - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-  - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-  - Linux: `~/.config/Claude/claude_desktop_config.json`
-- **Cursor**: Global settings (not in project)
-- **Other MCP Clients**: Typically in user config directories
-
-These files are **safe to put your API key in** because they're not in your git repository.
-
-### ✅ SAFE:
-- Putting the API key in MCP client config files (they're outside git)
-- Using system environment variables and referencing them
-- Keeping configs in user directories (`~/.config/`, `~/Library/`, etc.)
-
-### ❌ NEVER DO:
-- Don't create `.mcp.json` or config files **inside your project directory**
-- Don't commit any file containing your API key to git
-- Don't share config files containing API keys
-- Don't hardcode API keys in code
-
-### Using Environment Variables (Extra Security)
-
-For added security, store the key in your shell environment:
-
-```bash
-# Add to ~/.zshrc or ~/.bashrc
-export OPENROUTER_API_KEY="sk-or-v1-..."
-```
-
-Then reference it in your MCP config:
-```json
-{
-  "env": {
-    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
-  }
-}
-```
-
-## Available Tools
-
-### `review_code`
-
-Review code for quality, bugs, performance, and security issues.
-
-**Parameters:**
-- `code` (required): The code to review
-- `language` (optional): Programming language
-- `context` (optional): Additional context about the code
-- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
-
-**Example usage in Claude:**
-```
-Use review_code to check this TypeScript function:
-[paste your code]
-```
-
-### `review_frontend`
-
-Review frontend code with focus on accessibility, performance, and UX.
-
-**Parameters:**
-- `code` (required): The frontend code to review
-- `framework` (optional): Framework name (e.g., react, vue, svelte)
-- `review_type` (optional): `accessibility`, `performance`, `ux`, or `full` (default)
-- `context` (optional): Additional context
-- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
-
-**Example usage in Claude:**
-```
-Use review_frontend with review_type=accessibility to check this React component:
-[paste your component]
-```
-
-### `review_backend`
-
-Review backend code for security, performance, and architecture.
-
-**Parameters:**
-- `code` (required): The backend code to review
-- `language` (optional): Language/framework (e.g., node, python, go, rust)
-- `review_type` (optional): `security`, `performance`, `architecture`, or `full` (default)
-- `context` (optional): Additional context
-- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
-
-**Example usage in Claude:**
-```
-Use review_backend with review_type=security to analyze this API endpoint:
-[paste your code]
-```
-
-### `review_plan`
-
-Review implementation plans BEFORE coding to catch issues early.
-
-**Parameters:**
-- `plan` (required): The implementation plan to review
-- `review_type` (optional): `feasibility`, `completeness`, `risks`, `timeline`, or `full` (default)
-- `context` (optional): Project constraints or context
-- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
-
-**Example usage in Claude:**
-```
-Use review_plan to analyze this implementation plan:
-[paste your plan]
-```
-
-### `review_git_changes`
-
-Review git changes directly from your repository.
-
-**Parameters:**
-- `review_type` (optional): `staged`, `unstaged`, `diff`, or `commit` (default: `staged`)
-  - `staged` - Review staged changes (`git diff --cached`)
-  - `unstaged` - Review unstaged changes (`git diff`)
-  - `diff` - Review branch diff (`git diff main..HEAD`)
-  - `commit` - Review a specific commit (requires `commit_hash`)
-- `commit_hash` (optional): Commit hash to review (required when `review_type` is `commit`)
-- `context` (optional): Additional context about the changes
-- `output_format` (optional): `markdown`, `json`, or `html` (default: `markdown`)
-
-**Example usage in Claude:**
-```
-Use review_git_changes to review my staged changes
-```
-
-```
-Use review_git_changes with review_type=commit and commit_hash=abc123 to review that commit
-```
-
-### `discuss_with_council`
-
-Have multi-turn conversations with the AI council. Start a discussion, get feedback from all models, then ask follow-up questions while maintaining context.
-
-**Parameters:**
-- `message` (required): Your message or question for the council
-- `session_id` (optional): Session ID to continue an existing discussion (omit to start new)
-- `discussion_type` (optional): `code_review`, `plan_review`, or `general` (default: `general`)
-- `context` (optional): Additional context (code snippets, plan details, etc.)
-
-**Example usage in Claude:**
-```
-Use discuss_with_council to ask: What's the best way to implement error handling in a Node.js API?
-```
-
-**Continuing a discussion:**
-```
-Use discuss_with_council with session_id=<id-from-previous-response> to ask: Can you elaborate on the circuit breaker pattern you mentioned?
-```
-
-**Key features:**
-- Each model maintains its own conversation history for authentic diverse perspectives
-- Sessions persist for 30 minutes of inactivity
-- Rate limited to 10 requests per minute per session
-- Context windowing keeps conversations efficient
-
-### `tps_audit`
-
-Analyze any codebase using Toyota Production System (TPS) principles. Generates beautiful HTML reports with scores for flow, waste, bottlenecks, and quality.
-
-**Parameters:**
-- `path` (optional): Path to repository root (auto-detects git root if not provided)
-- `focus_areas` (optional): Specific areas to focus on (e.g., `["flow", "security", "performance"]`)
-- `max_files` (optional): Maximum files to analyze (default: 50, max: 100)
-- `file_types` (optional): File extensions to include (default: common source files)
-- `include_sensitive` (optional): Include potentially sensitive files (default: false)
-- `output_format` (optional): `html`, `markdown`, or `json` (default: `html`)
-
-**Example usage in Claude:**
-```
-Use tps_audit to analyze this repository
-```
-
-```
-Use tps_audit with output_format=markdown and focus_areas=["security", "performance"]
-```
-
-**What it analyzes:**
-- **Flow**: How data and control flow through the system, entry points, pathways
-- **Muda (Waste)**: The 7 wastes - defects, overproduction, waiting, transportation, inventory, motion, extra-processing
-- **Bottlenecks**: Where flow is constrained, severity and impact
-- **Jidoka**: Built-in quality, fail-fast patterns, error handling
-- **Recommendations**: Prioritized improvements with effort/impact ratings
-
-**Security features:**
-- Automatically skips sensitive files (`.env`, credentials, keys, tokens)
-- Scans file contents for embedded secrets (AWS keys, GitHub PATs, etc.)
-- Validates paths to prevent directory traversal attacks
-- Enforces size limits to prevent resource exhaustion
-
-**Output:**
-Reports are saved to `.code-council/` directory:
-- `tps-audit.html` - Interactive styled report with glass-morphism dark theme
-- `tps-audit.md` - Markdown version
-- `tps-audit.json` - Raw JSON data
-
-### `list_review_config`
-
-Show which AI models are currently configured for each review type.
-
-### `init_config`
-
-Generate a Code Council configuration file with default values.
-
-**Parameters:**
-- `location` (optional): Where to create the config file
-  - `directory` (default) - Creates `.code-council/config.ts`
-  - `root` - Creates `code-council.config.ts` in project root
-- `format` (optional): Config file format
-  - `typescript` (default) - TypeScript with full type support
-  - `javascript` - Plain JavaScript
-- `include_comments` (optional): Include explanatory comments (default: `true`)
-- `force` (optional): Overwrite existing config file (default: `false`)
-
-**Example usage in Claude:**
-```
-Use init_config to generate a configuration file
-```
-
-```
-Use init_config with location=root and format=javascript
-```
+| Level | Meaning | Action |
+|-------|---------|--------|
+| **Unanimous** | All models agree | High confidence - fix this |
+| **Majority** | Most models agree | Likely valid - investigate |
+| **Disagreement** | Models conflict | Your judgment needed |
+| **Single** | One model found this | Worth checking |
 
 ## Configuration
 
-Code Council supports two configuration methods:
-1. **Config file** (recommended) - TypeScript/JavaScript config file with full type support
-2. **Environment variables** - Quick setup via MCP client config
+Code Council works out of the box with sensible defaults. For customization:
 
-### Config File (Recommended)
+- **[Configuration Guide](docs/configuration.md)** - MCP client setup, config files, environment variables
+- **[Model Selection](docs/models.md)** - Choose models, pricing, performance tradeoffs
+- **[Tools Reference](docs/tools-reference.md)** - Detailed tool parameters and examples
 
-Create a config file in your project for full type support and autocompletion:
+### Custom Models Example
 
-**Option 1: `.code-council/config.ts`** (recommended)
-```typescript
-import { defineConfig } from "@klitchevo/code-council/config";
-
-export default defineConfig({
-  models: {
-    codeReview: ["anthropic/claude-sonnet-4", "openai/gpt-4o"],
-    frontendReview: ["anthropic/claude-sonnet-4"],
-    backendReview: ["openai/gpt-4o", "google/gemini-2.0-flash-exp"],
-  },
-  llm: {
-    temperature: 0.3,
-    maxTokens: 16384,
-  },
-});
-```
-
-**Option 2: `code-council.config.ts`** (project root)
-```typescript
-import { defineConfig } from "@klitchevo/code-council/config";
-
-export default defineConfig({
-  // Same options as above
-});
-```
-
-**Generate a config file via CLI:**
-```bash
-npx @klitchevo/code-council init
-```
-
-**CLI Options:**
-```bash
-npx @klitchevo/code-council init [options]
-
-Options:
-  --ts, --typescript   Generate TypeScript config (default)
-  --js, --javascript   Generate JavaScript config
-  --root               Create config in project root (code-council.config.ts)
-  --dir, --directory   Create config in .code-council/ directory (default)
-  --no-comments        Generate config without explanatory comments
-  --force, -f          Overwrite existing config file
-
-Examples:
-  npx @klitchevo/code-council init              # Creates .code-council/config.ts
-  npx @klitchevo/code-council init --js --root  # Creates code-council.config.js
-  npx @klitchevo/code-council init --force      # Overwrite existing config
-```
-
-**Or use the MCP tool:**
-```
-Use init_config to generate a configuration file
-```
-
-#### Complete Config Options
-
-```typescript
-import { defineConfig } from "@klitchevo/code-council/config";
-
-export default defineConfig({
-  // Models for each review type
-  models: {
-    defaultModels: ["model1", "model2"],    // Fallback for all types
-    codeReview: ["model1", "model2"],       // General code reviews
-    frontendReview: ["model1"],             // Frontend reviews
-    backendReview: ["model1", "model2"],    // Backend reviews
-    planReview: ["model1"],                 // Plan reviews
-    discussion: ["model1", "model2"],       // Council discussions
-    tpsAudit: ["model1", "model2"],         // TPS audits
-  },
-
-  // Consensus analysis settings (all reviews use consensus by default)
-  consensus: {
-    modelWeights: {                         // Weight models differently
-      "anthropic/claude-sonnet-4": 1.2,     // Higher = more influence
-      "openai/gpt-4o": 1.0,
-    },
-    highConfidenceThreshold: 0.8,           // Threshold for high confidence
-    moderateConfidenceThreshold: 0.5,       // Threshold for moderate confidence
-  },
-
-  // LLM behavior
-  llm: {
-    temperature: 0.3,                       // 0.0-2.0, lower = more focused
-    maxTokens: 16384,                       // Max response length
-  },
-
-  // Session settings for council discussions
-  session: {
-    maxSessions: 100,                       // Max concurrent sessions
-    maxMessagesPerModel: 20,                // Messages before context windowing
-    ttlMs: 1800000,                         // Session timeout (30 min default)
-    rateLimitPerMinute: 10,                 // Rate limit per session
-  },
-
-  // Input limits
-  inputLimits: {
-    maxCodeLength: 100000,                  // Max code input length
-    maxContextLength: 50000,                // Max context length
-    maxModels: 10,                          // Max models per review
-  },
-});
-```
-
-### Environment Variables
-
-For quick setup without a config file, use environment variables in your MCP client configuration.
-
-**Available Environment Variables:**
-- `CODE_REVIEW_MODELS` - Models for general code reviews
-- `FRONTEND_REVIEW_MODELS` - Models for frontend reviews
-- `BACKEND_REVIEW_MODELS` - Models for backend reviews
-- `PLAN_REVIEW_MODELS` - Models for plan reviews
-- `DISCUSSION_MODELS` - Models for council discussions
-- `TPS_AUDIT_MODELS` - Models for TPS codebase audits
-- `TEMPERATURE` - Control response randomness (0.0-2.0, default: 0.3)
-- `MAX_TOKENS` - Maximum response tokens (default: 16384)
-
-**Format:** Model arrays use JSON array format
-
-**Example:**
 ```json
 {
-  "mcpServers": {
-    "code-council": {
-      "command": "npx",
-      "args": ["-y", "@klitchevo/code-council"],
-      "env": {
-        "OPENROUTER_API_KEY": "your-api-key",
-        "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5", "openai/gpt-4o", "google/gemini-2.0-flash-exp"],
-        "FRONTEND_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5"],
-        "BACKEND_REVIEW_MODELS": ["openai/gpt-4o", "anthropic/claude-sonnet-4.5"],
-        "TEMPERATURE": "0.5",
-        "MAX_TOKENS": "32000"
-      }
-    }
+  "env": {
+    "OPENROUTER_API_KEY": "your-api-key",
+    "CODE_REVIEW_MODELS": ["anthropic/claude-sonnet-4.5", "openai/gpt-4o"]
   }
 }
 ```
 
-### Configuration Priority
+## Cost
 
-Config file settings take priority over environment variables:
-1. Config file value (if set)
-2. Environment variable (if set)
-3. Default value
+Default models are chosen for cost-effectiveness (~$0.01-0.05 per review).
 
-### Default Models
+Swap in Claude/GPT-4 for higher quality at higher cost (~$0.10-0.30 per review).
 
-If you don't specify models, the server uses these defaults:
-- `minimax/minimax-m2.1` - Fast, cost-effective reasoning
-- `z-ai/glm-4.7` - Strong multilingual capabilities
-- `moonshotai/kimi-k2.5` - Advanced reasoning with thinking
-- `deepseek/deepseek-v3.2` - State-of-the-art open model
-
-### Finding Models
-
-Browse all available models at [OpenRouter Models](https://openrouter.ai/models). Popular choices include:
-- `anthropic/claude-sonnet-4.5` - Latest Sonnet, excellent for code review
-- `anthropic/claude-opus-4.5` - Frontier reasoning model for complex tasks
-- `openai/gpt-4o` - Latest GPT-4 Omni model
-- `google/gemini-2.0-flash-exp` - Fast and affordable
-- `meta-llama/llama-3.3-70b-instruct` - Latest open source option
-
-### Local Development
-
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd multi-agent
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file:
-```bash
-cp .env.example .env
-# Edit .env and add your OPENROUTER_API_KEY
-```
-
-4. Build:
-```bash
-npm run build
-```
-
-5. Run:
-```bash
-npm start
-# or use the convenience script:
-./run.sh
-```
-
-6. For development with auto-rebuild:
-```bash
-npm run dev
-```
-
-## How It Works
-
-1. The MCP server exposes tools that Claude (or other MCP clients) can call
-2. When you ask Claude to review code, it calls the appropriate tool
-3. The server sends your code to multiple AI models via OpenRouter in parallel
-4. Results from all models are aggregated and returned
-5. Claude presents you with diverse perspectives from different AI models
-
-## Cost Considerations
-
-- Each review runs across multiple models simultaneously
-- Costs vary by model - check [OpenRouter pricing](https://openrouter.ai/models)
-- You can reduce costs by:
-  - Using fewer models in your configuration
-  - Choosing cheaper models
-  - Using specific `review_type` options instead of `full` reviews
-  - Lowering `MAX_TOKENS` (default: 16384) for shorter responses
-
-## Troubleshooting
-
-### "OPENROUTER_API_KEY environment variable is required"
-
-Make sure you've added the API key to the `env` section of your MCP client configuration, not just in a separate `.env` file.
-
-### Reviews are slow
-
-- This is expected when using multiple models in parallel
-- Consider using fewer models or faster models
-- Check OpenRouter status at [status.openrouter.ai](https://status.openrouter.ai)
-
-### Models returning errors
-
-- Check that you have sufficient credits in your OpenRouter account
-- Some models may have rate limits or temporary availability issues
-- The server will show which models succeeded and which failed
+See [Model Selection Guide](docs/models.md) for pricing details and optimization tips.
 
 ## Requirements
 
 - Node.js >= 18.0.0
-- OpenRouter API key
+- [OpenRouter](https://openrouter.ai) API key
 - MCP-compatible client (Claude Desktop, Cursor, etc.)
 
-## License
+## Troubleshooting
 
-MIT
+**"OPENROUTER_API_KEY environment variable is required"**
+Add the API key to the `env` section of your MCP client configuration.
+
+**Reviews are slow**
+This is expected when using multiple models. Consider using fewer models or faster models like Gemini Flash.
+
+**Models returning errors**
+Check your OpenRouter credits and model availability at [status.openrouter.ai](https://status.openrouter.ai).
 
 ## Contributing
 
 Contributions welcome! Please open an issue or PR.
+
+## License
+
+MIT
 
 ## Links
 
