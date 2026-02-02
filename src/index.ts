@@ -50,7 +50,24 @@ import {
 const args = process.argv.slice(2);
 const command = args[0];
 
-if (command === "init") {
+// Handle CLI review command (async)
+if (command === "review") {
+	// Dynamic import to avoid loading CLI code when not needed
+	import("./cli").then(async ({ processResult, runCli }) => {
+		try {
+			const result = await runCli(process.argv);
+			if (result) {
+				processResult(result);
+			}
+		} catch (error) {
+			console.error(
+				"CLI error:",
+				error instanceof Error ? error.message : error,
+			);
+			process.exit(1);
+		}
+	});
+} else if (command === "init") {
 	// Parse CLI flags for init command
 	const cliOptions: Record<string, unknown> = {};
 
@@ -104,236 +121,248 @@ Examples:
 		console.error(`✗ ${result.message}`);
 		process.exit(1);
 	}
-}
-
-if (command === "--help" || command === "-h") {
+} else if (command === "--help" || command === "-h") {
 	console.log(`
 Code Council - Multi-model AI code review MCP server
 
 Usage: npx @klitchevo/code-council [command]
 
 Commands:
-  init     Generate a configuration file with default values
-  (none)   Start the MCP server (requires OPENROUTER_API_KEY)
+  review <type>   Run a multi-model code review (code, git, frontend, backend, plan)
+  init            Generate a configuration file with default values
+  (none)          Start the MCP server (requires OPENROUTER_API_KEY)
+
+Review Types:
+  code       Review code from stdin or file
+  git        Review git changes (staged, unstaged, diff, commit)
+  frontend   Frontend-focused review
+  backend    Backend-focused review
+  plan       Review implementation plans
+
+Examples:
+  npx @klitchevo/code-council review git
+  npx @klitchevo/code-council review git --review-type diff
+  echo "const x = 1" | npx @klitchevo/code-council review code
+  npx @klitchevo/code-council review --help
 
 For MCP server usage, configure in your MCP client settings.
 See: https://github.com/klitchevo/code-council
 `);
 	process.exit(0);
-}
+} else {
+	// MCP Server mode - validate API key and start server
+	const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+	if (!OPENROUTER_API_KEY) {
+		console.error("Error: OPENROUTER_API_KEY environment variable is required");
+		console.error(
+			"For MCP clients, add it to the 'env' section of your server config.",
+		);
+		console.error(
+			"For local development, create a .env file with: OPENROUTER_API_KEY=your-key",
+		);
+		process.exit(1);
+	}
 
-// Validate API key (only needed for MCP server mode)
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-if (!OPENROUTER_API_KEY) {
-	console.error("Error: OPENROUTER_API_KEY environment variable is required");
-	console.error(
-		"For MCP clients, add it to the 'env' section of your server config.",
-	);
-	console.error(
-		"For local development, create a .env file with: OPENROUTER_API_KEY=your-key",
-	);
-	process.exit(1);
-}
+	// Initialize client, session store, and server
+	const client = new ReviewClient(OPENROUTER_API_KEY);
+	const sessionStore = new InMemorySessionStore();
+	const server = new McpServer({
+		name: "code-council",
+		version: "1.0.0",
+	});
 
-// Initialize client, session store, and server
-const client = new ReviewClient(OPENROUTER_API_KEY);
-const sessionStore = new InMemorySessionStore();
-const server = new McpServer({
-	name: "code-council",
-	version: "1.0.0",
-});
-
-// Register review tools
-createReviewTool(server, {
-	name: "review_code",
-	description:
-		"Review code for quality, bugs, performance, and security issues using multiple AI models in parallel",
-	inputSchema: codeReviewSchema,
-	handler: (input) => handleCodeReview(client, input),
-});
-
-createReviewTool(server, {
-	name: "review_frontend",
-	description:
-		"Review frontend code for accessibility, performance, UX, and best practices using multiple AI models in parallel",
-	inputSchema: frontendReviewSchema,
-	handler: (input) => handleFrontendReview(client, input),
-});
-
-createReviewTool(server, {
-	name: "review_backend",
-	description:
-		"Review backend code for security, performance, architecture, and best practices using multiple AI models in parallel",
-	inputSchema: backendReviewSchema,
-	handler: (input) => handleBackendReview(client, input),
-});
-
-createReviewTool(server, {
-	name: "review_plan",
-	description:
-		"Review implementation plans BEFORE coding to catch issues early using multiple AI models in parallel",
-	inputSchema: planReviewSchema,
-	handler: (input) => handlePlanReview(client, input),
-});
-
-createReviewTool(server, {
-	name: "review_git_changes",
-	description:
-		"Review git changes (staged, unstaged, diff, or specific commit) using multiple AI models in parallel",
-	inputSchema: gitReviewSchema,
-	handler: (input) => handleGitReview(client, getCodeReviewModels(), input),
-});
-
-// Register TPS audit tool (custom handler for HTML/JSON output)
-server.registerTool(
-	"tps_audit",
-	{
+	// Register review tools
+	createReviewTool(server, {
+		name: "review_code",
 		description:
-			"Toyota Production System audit - analyze a codebase for flow, waste, bottlenecks, and quality. " +
-			"Scans the repository, identifies entry points, maps data flow, and provides actionable recommendations. " +
-			"Outputs interactive HTML report by default, or markdown/JSON.",
-		inputSchema: tpsAuditSchema,
-	},
-	async (input: Record<string, unknown>) => {
-		try {
-			logger.debug("Starting tps_audit", {
-				inputKeys: Object.keys(input),
-			});
+			"Review code for quality, bugs, performance, and security issues using multiple AI models in parallel",
+		inputSchema: codeReviewSchema,
+		handler: (input) => handleCodeReview(client, input),
+	});
 
-			const result = await handleTpsAudit(client, getTpsAuditModels(), input);
-			const formattedOutput = formatTpsAuditResults(result);
-
-			logger.info("Completed tps_audit", {
-				modelCount: result.models.length,
-				filesScanned: result.scanResult.files.length,
-				outputFormat: result.outputFormat,
-				hasAnalysis: !!result.analysis,
-			});
-
-			return {
-				content: [
-					{
-						type: "text" as const,
-						text: formattedOutput,
-					},
-				],
-			};
-		} catch (error) {
-			logger.error(
-				"Error in tps_audit",
-				error instanceof Error ? error : new Error(String(error)),
-			);
-			return formatError(error);
-		}
-	},
-);
-
-// Register config tool
-server.registerTool(
-	"list_review_config",
-	{ description: "Show current model configuration" },
-	async () => {
-		const { text } = await handleListConfig();
-		return {
-			content: [{ type: "text" as const, text }],
-		};
-	},
-);
-
-// Register init_config tool
-server.registerTool(
-	"init_config",
-	{
+	createReviewTool(server, {
+		name: "review_frontend",
 		description:
-			"Generate a Code Council configuration file with default values. " +
-			"Creates a TypeScript or JavaScript config file with model settings, " +
-			"consensus options, and LLM parameters.",
-		inputSchema: initConfigSchema,
-	},
-	async (input: Record<string, unknown>) => {
-		try {
-			const result = handleInitConfig(input);
+			"Review frontend code for accessibility, performance, UX, and best practices using multiple AI models in parallel",
+		inputSchema: frontendReviewSchema,
+		handler: (input) => handleFrontendReview(client, input),
+	});
 
-			if (result.success) {
+	createReviewTool(server, {
+		name: "review_backend",
+		description:
+			"Review backend code for security, performance, architecture, and best practices using multiple AI models in parallel",
+		inputSchema: backendReviewSchema,
+		handler: (input) => handleBackendReview(client, input),
+	});
+
+	createReviewTool(server, {
+		name: "review_plan",
+		description:
+			"Review implementation plans BEFORE coding to catch issues early using multiple AI models in parallel",
+		inputSchema: planReviewSchema,
+		handler: (input) => handlePlanReview(client, input),
+	});
+
+	createReviewTool(server, {
+		name: "review_git_changes",
+		description:
+			"Review git changes (staged, unstaged, diff, or specific commit) using multiple AI models in parallel",
+		inputSchema: gitReviewSchema,
+		handler: (input) => handleGitReview(client, getCodeReviewModels(), input),
+	});
+
+	// Register TPS audit tool (custom handler for HTML/JSON output)
+	server.registerTool(
+		"tps_audit",
+		{
+			description:
+				"Toyota Production System audit - analyze a codebase for flow, waste, bottlenecks, and quality. " +
+				"Scans the repository, identifies entry points, maps data flow, and provides actionable recommendations. " +
+				"Outputs interactive HTML report by default, or markdown/JSON.",
+			inputSchema: tpsAuditSchema,
+		},
+		async (input: Record<string, unknown>) => {
+			try {
+				logger.debug("Starting tps_audit", {
+					inputKeys: Object.keys(input),
+				});
+
+				const result = await handleTpsAudit(client, getTpsAuditModels(), input);
+				const formattedOutput = formatTpsAuditResults(result);
+
+				logger.info("Completed tps_audit", {
+					modelCount: result.models.length,
+					filesScanned: result.scanResult.files.length,
+					outputFormat: result.outputFormat,
+					hasAnalysis: !!result.analysis,
+				});
+
 				return {
 					content: [
 						{
 							type: "text" as const,
-							text: `${result.message}\n\nYou can now customize the configuration by editing the file.`,
+							text: formattedOutput,
 						},
 					],
 				};
+			} catch (error) {
+				logger.error(
+					"Error in tps_audit",
+					error instanceof Error ? error : new Error(String(error)),
+				);
+				return formatError(error);
 			}
+		},
+	);
+
+	// Register config tool
+	server.registerTool(
+		"list_review_config",
+		{ description: "Show current model configuration" },
+		async () => {
+			const { text } = await handleListConfig();
 			return {
-				content: [
-					{
-						type: "text" as const,
-						text: result.message,
-					},
-				],
+				content: [{ type: "text" as const, text }],
 			};
-		} catch (error) {
-			logger.error(
-				"Error in init_config",
-				error instanceof Error ? error : new Error(String(error)),
-			);
-			return formatError(error);
+		},
+	);
+
+	// Register init_config tool
+	server.registerTool(
+		"init_config",
+		{
+			description:
+				"Generate a Code Council configuration file with default values. " +
+				"Creates a TypeScript or JavaScript config file with model settings, " +
+				"consensus options, and LLM parameters.",
+			inputSchema: initConfigSchema,
+		},
+		async (input: Record<string, unknown>) => {
+			try {
+				const result = handleInitConfig(input);
+
+				if (result.success) {
+					return {
+						content: [
+							{
+								type: "text" as const,
+								text: `${result.message}\n\nYou can now customize the configuration by editing the file.`,
+							},
+						],
+					};
+				}
+				return {
+					content: [
+						{
+							type: "text" as const,
+							text: result.message,
+						},
+					],
+				};
+			} catch (error) {
+				logger.error(
+					"Error in init_config",
+					error instanceof Error ? error : new Error(String(error)),
+				);
+				return formatError(error);
+			}
+		},
+	);
+
+	// Register council discussion tool
+	createConversationTool(
+		server,
+		{
+			name: "discuss_with_council",
+			description:
+				"Start or continue a multi-turn discussion with the AI council. " +
+				"First call (without session_id) starts a new discussion and returns a session_id. " +
+				"Subsequent calls with the session_id continue the conversation. " +
+				"Each model maintains its own conversation history for authentic perspectives.",
+			inputSchema: discussCouncilSchema,
+			handler: (input, store) => handleDiscussCouncil(client, input, store),
+		},
+		sessionStore,
+	);
+
+	// Graceful shutdown handlers
+	function handleShutdown(signal: string) {
+		logger.info(`Received ${signal}, shutting down gracefully`);
+		sessionStore.shutdown();
+		process.exit(0);
+	}
+
+	process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+	process.on("SIGINT", () => handleShutdown("SIGINT"));
+
+	// Start server
+	async function main() {
+		// Initialize configuration from file (if exists)
+		await initializeConfig();
+		const configFilePath = getConfigPath();
+		if (configFilePath) {
+			logger.info("Loaded configuration from file", {
+				configPath: configFilePath,
+			});
 		}
-	},
-);
 
-// Register council discussion tool
-createConversationTool(
-	server,
-	{
-		name: "discuss_with_council",
-		description:
-			"Start or continue a multi-turn discussion with the AI council. " +
-			"First call (without session_id) starts a new discussion and returns a session_id. " +
-			"Subsequent calls with the session_id continue the conversation. " +
-			"Each model maintains its own conversation history for authentic perspectives.",
-		inputSchema: discussCouncilSchema,
-		handler: (input, store) => handleDiscussCouncil(client, input, store),
-	},
-	sessionStore,
-);
+		const transport = new StdioServerTransport();
+		await server.connect(transport);
 
-// Graceful shutdown handlers
-function handleShutdown(signal: string) {
-	logger.info(`Received ${signal}, shutting down gracefully`);
-	sessionStore.shutdown();
-	process.exit(0);
-}
-
-process.on("SIGTERM", () => handleShutdown("SIGTERM"));
-process.on("SIGINT", () => handleShutdown("SIGINT"));
-
-// Start server
-async function main() {
-	// Initialize configuration from file (if exists)
-	await initializeConfig();
-	const configFilePath = getConfigPath();
-	if (configFilePath) {
-		logger.info("Loaded configuration from file", {
-			configPath: configFilePath,
+		logger.info("Code Council MCP server started", {
+			configFile: configFilePath,
+			codeReviewModels: getCodeReviewModels(),
+			frontendReviewModels: getFrontendReviewModels(),
+			backendReviewModels: getBackendReviewModels(),
+			planReviewModels: getPlanReviewModels(),
+			discussionModels: getDiscussionModels(),
+			tpsAuditModels: getTpsAuditModels(),
 		});
 	}
 
-	const transport = new StdioServerTransport();
-	await server.connect(transport);
-
-	logger.info("Code Council MCP server started", {
-		configFile: configFilePath,
-		codeReviewModels: getCodeReviewModels(),
-		frontendReviewModels: getFrontendReviewModels(),
-		backendReviewModels: getBackendReviewModels(),
-		planReviewModels: getPlanReviewModels(),
-		discussionModels: getDiscussionModels(),
-		tpsAuditModels: getTpsAuditModels(),
+	main().catch((error) => {
+		logger.error("Fatal error during server startup", error);
+		process.exit(1);
 	});
 }
-
-main().catch((error) => {
-	logger.error("Fatal error during server startup", error);
-	process.exit(1);
-});
