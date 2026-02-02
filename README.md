@@ -72,6 +72,8 @@ Think of it as getting 4 senior engineers to review your code at once.
 
 ## Quick Start
 
+### MCP Server (Claude Desktop, Cursor, etc.)
+
 Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
@@ -92,13 +94,81 @@ Get your API key at [OpenRouter](https://openrouter.ai/keys).
 
 That's it. Ask Claude: *"Use review_code to check this function: [paste code]"*
 
+### CLI (GitHub Actions, CI/CD)
+
+Run reviews directly from command line:
+
+```bash
+# Review git changes
+npx @klitchevo/code-council review git --review-type diff
+
+# Review code from stdin
+echo "function foo() {}" | npx @klitchevo/code-council review code
+
+# Review with custom models
+npx @klitchevo/code-council review git --models "anthropic/claude-sonnet-4,openai/gpt-4o"
+
+# Show help
+npx @klitchevo/code-council review --help
+```
+
 > **More setup options:** See [Configuration Guide](docs/configuration.md) for Cursor, VS Code, custom models, and advanced options.
+
+## GitHub Actions
+
+Automatically review PRs with multiple AI models:
+
+```yaml
+name: Code Council Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Code Council Review
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          npx @klitchevo/code-council review git \
+            --review-type diff \
+            --format markdown \
+            > review.md
+
+      - name: Post Review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+            --method POST \
+            -f body="$(cat review.md)" \
+            -f event="COMMENT"
+```
+
+Add `OPENROUTER_API_KEY` to your repository secrets.
 
 ## Use Cases
 
 | Scenario | Tool | What You Get |
 |----------|------|--------------|
 | About to merge a PR | `review_git_changes` | Multi-model review of your diff |
+| Automated PR reviews | CLI `review git` | Multi-model review in GitHub Actions |
 | Planning a refactor | `review_plan` | Catch design issues before coding |
 | Reviewing React components | `review_frontend` | Accessibility + performance + UX focus |
 | Securing an API endpoint | `review_backend` | Security + architecture analysis |
