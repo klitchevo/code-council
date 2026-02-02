@@ -28,8 +28,6 @@ const DEFAULT_CLI_MODELS = [
 	"z-ai/glm-4.7",
 	"moonshotai/kimi-k2.5",
 	"deepseek/deepseek-v3.2",
-	"google/gemini-3-pro-preview",
-	"openai/gpt-5.2",
 ];
 
 /**
