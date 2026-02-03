@@ -50,14 +50,14 @@ jobs:
         run: |
           # Run review with pr-comments format for inline comments
           # Note: stdout goes to file, stderr shows logs in console
-          if node dist/cli-*.js review git --review-type diff --format pr-comments \
+          if node dist/index.js review git --review-type diff --format pr-comments \
             --models "google/gemini-3-pro-preview,openai/gpt-5.2-codex,minimax/minimax-m2.1,z-ai/glm-4.7,moonshotai/kimi-k2.5,deepseek/deepseek-v3.2" > review.json; then
             echo "format=pr-comments" >> $GITHUB_OUTPUT
             echo "has_review=true" >> $GITHUB_OUTPUT
           else
             echo "pr-comments format failed, falling back to markdown"
             cat review.json || true
-            if node dist/cli-*.js review git --review-type diff --format markdown > review.md; then
+            if node dist/index.js review git --review-type diff --format markdown > review.md; then
               echo "format=markdown" >> $GITHUB_OUTPUT
               echo "has_review=true" >> $GITHUB_OUTPUT
             else
