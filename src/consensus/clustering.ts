@@ -221,9 +221,26 @@ export function findingSimilarity(
 		finding2.location?.file &&
 		finding1.location.file === finding2.location.file;
 
+	// Check if both findings share an issue type (keyword-based concept matching)
+	const types1 = extractIssueTypes(`${finding1.title} ${finding1.description}`);
+	const types2 = extractIssueTypes(`${finding2.title} ${finding2.description}`);
+	let sharedIssueType = false;
+	for (const type of types1) {
+		if (types2.has(type)) {
+			sharedIssueType = true;
+			break;
+		}
+	}
+
 	// Calculate text similarity
 	const titleSim = textSimilarity(finding1.title, finding2.title);
 	const descSim = textSimilarity(finding1.description, finding2.description);
+
+	// For findings with the same issue type in the same file, cluster aggressively
+	// This handles cases like "SQL Injection" from model A and "CWE-89: Unsafe query" from model B
+	if (sharedIssueType && sameFile) {
+		return Math.min(1, 0.75 + titleSim * 0.15 + descSim * 0.1);
+	}
 
 	// For security findings in the same file, be VERY aggressive about clustering
 	// Multiple models finding different security issues in the same file = same problem
@@ -231,6 +248,11 @@ export function findingSimilarity(
 		// High similarity just for being security issues in the same file
 		// Text similarity is a bonus
 		return Math.min(1, 0.6 + titleSim * 0.2 + descSim * 0.1);
+	}
+
+	// Same issue type even in different files suggests related findings
+	if (sharedIssueType) {
+		return Math.min(1, 0.5 + titleSim * 0.25 + descSim * 0.15);
 	}
 
 	// Weight components for non-security or different files
@@ -276,30 +298,59 @@ function shouldJoinCluster(
 }
 
 /**
+ * Group key for pre-clustering: file + category + issue type
+ */
+function getClusterKey(finding: Finding): string {
+	const file = finding.location?.file ?? "no-file";
+	const category = finding.category;
+	const types = extractIssueTypes(`${finding.title} ${finding.description}`);
+	const primaryType = types.size > 0 ? [...types][0] : "general";
+	return `${file}::${category}::${primaryType}`;
+}
+
+/**
  * Initial clustering by location and category
+ * Uses a two-phase approach:
+ * 1. First group by file+category+issue-type for coarse clustering
+ * 2. Then refine with similarity matching
  */
 function initialClustering(
 	findings: Finding[],
 	config: ClusteringConfig,
 ): Finding[][] {
-	const clusters: Finding[][] = [];
-
+	// Phase 1: Group by file + category + issue type
+	const preGroups = new Map<string, Finding[]>();
 	for (const finding of findings) {
-		let joined = false;
+		const key = getClusterKey(finding);
+		const group = preGroups.get(key) ?? [];
+		group.push(finding);
+		preGroups.set(key, group);
+	}
 
-		// Try to join an existing cluster
-		for (const cluster of clusters) {
-			if (shouldJoinCluster(finding, cluster, config)) {
-				cluster.push(finding);
-				joined = true;
-				break;
+	// Phase 2: For each pre-group, further cluster by similarity
+	const clusters: Finding[][] = [];
+	for (const group of preGroups.values()) {
+		if (group.length === 1) {
+			clusters.push(group);
+			continue;
+		}
+
+		// Within the pre-group, cluster by similarity
+		const subClusters: Finding[][] = [];
+		for (const finding of group) {
+			let joined = false;
+			for (const subCluster of subClusters) {
+				if (shouldJoinCluster(finding, subCluster, config)) {
+					subCluster.push(finding);
+					joined = true;
+					break;
+				}
+			}
+			if (!joined) {
+				subClusters.push([finding]);
 			}
 		}
-
-		// Create new cluster if no match
-		if (!joined) {
-			clusters.push([finding]);
-		}
+		clusters.push(...subClusters);
 	}
 
 	return clusters;
@@ -307,6 +358,7 @@ function initialClustering(
 
 /**
  * Try to merge similar clusters
+ * Uses "best match" logic: if any pair between clusters is highly similar, merge them
  */
 function mergeSimilarClusters(
 	clusters: Finding[][],
@@ -330,18 +382,27 @@ function mergeSimilarClusters(
 
 				if (!cluster1 || !cluster2) continue;
 
-				// Calculate average similarity between clusters
+				// Use "best match" logic: find the highest similarity between any pair
+				// This handles cases where one model reports multiple related findings
+				let maxSim = 0;
 				let totalSim = 0;
 				let pairs = 0;
 				for (const f1 of cluster1) {
 					for (const f2 of cluster2) {
-						totalSim += findingSimilarity(f1, f2, config);
+						const sim = findingSimilarity(f1, f2, config);
+						maxSim = Math.max(maxSim, sim);
+						totalSim += sim;
 						pairs++;
 					}
 				}
 				const avgSim = pairs > 0 ? totalSim / pairs : 0;
 
-				if (avgSim >= config.similarityThreshold) {
+				// Merge if best match is very high OR average is above threshold
+				// This is more forgiving for clusters with mixed findings
+				const shouldMerge =
+					maxSim >= 0.75 || avgSim >= config.similarityThreshold;
+
+				if (shouldMerge) {
 					// Merge cluster j into cluster i
 					merged[i] = [...cluster1, ...cluster2];
 					merged.splice(j, 1);
