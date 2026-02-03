@@ -1083,7 +1083,7 @@ npx @klitchevo/code-council review git \
       </div>
 
       <h3 style="font-size: 20px; margin: 40px 0 20px; color: var(--green-light);">GitHub Actions Workflow</h3>
-      <p style="color: var(--text-muted); margin-bottom: 20px;">Findings appear as <strong style="color: var(--green-light);">inline comments</strong> on the exact lines of code in your PR.</p>
+      <p style="color: var(--text-muted); margin-bottom: 20px;">Findings appear as <strong style="color: var(--green-light);">inline comments</strong> on the exact lines of code in your PR. Code fixes use GitHub's <strong style="color: var(--green-light);">suggestion syntax</strong> for one-click apply.</p>
 
       <div class="config-grid">
         <div class="config-panel" style="grid-column: span 2;">
@@ -1126,6 +1126,7 @@ npx @klitchevo/code-council review git \
         <span class="code-key">run:</span> |
           gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
             --method POST --input review.json</code></pre>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 12px;"><strong style="color: var(--green-light);">New in v0.2.1:</strong> Code suggestions use GitHub's native syntax with "Apply suggestion" button. Re-runs automatically clean up old comments.</p>
           </div>
         </div>
       </div>

@@ -121,6 +121,10 @@ npx @klitchevo/code-council review --help
 
 Automatically review PRs with multiple AI models. Findings appear as **inline comments** on the exact lines of code.
 
+**New in v0.2.1:**
+- Code fixes use GitHub's **suggestion syntax** - apply with one click
+- Re-runs **automatically clean up** old comments (no duplicates)
+
 ### Quick Setup
 
 Generate the workflow file automatically:
