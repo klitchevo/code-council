@@ -142,6 +142,35 @@ Examples:
 
 Or use the MCP tool: `Use init_config to generate a configuration file`
 
+## GitHub Actions Setup
+
+Generate a GitHub Actions workflow for automated PR reviews:
+
+```bash
+npx @klitchevo/code-council setup workflow
+```
+
+This creates `.github/workflows/code-council-review.yml` with **inline PR comments** enabled - findings appear directly on the lines of code in your PR.
+
+**Options:**
+
+```bash
+npx @klitchevo/code-council setup workflow [options]
+
+Options:
+  --simple        Use markdown format (single comment, no inline comments)
+  --force, -f     Overwrite existing workflow file
+  --path <dir>    Custom path for workflow (default: .github/workflows)
+
+Examples:
+  npx @klitchevo/code-council setup workflow           # Inline PR comments
+  npx @klitchevo/code-council setup workflow --simple  # Markdown summary only
+  npx @klitchevo/code-council setup workflow --force   # Overwrite existing
+```
+
+After setup, add `OPENROUTER_API_KEY` to your repository secrets:
+Settings > Secrets and variables > Actions > New repository secret
+
 ### Complete Config Options
 
 ```typescript

@@ -34,7 +34,7 @@ export type GitReviewType = "staged" | "unstaged" | "diff" | "commit";
 /**
  * Output formats for review results
  */
-export type OutputFormat = "markdown" | "json" | "html";
+export type OutputFormat = "markdown" | "json" | "html" | "pr-comments";
 
 /**
  * Frontend review focus areas

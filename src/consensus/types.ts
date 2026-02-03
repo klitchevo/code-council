@@ -74,7 +74,12 @@ export type ConsensusType = (typeof CONSENSUS_TYPES)[number];
 /**
  * Output format options for consensus reports
  */
-export const OUTPUT_FORMATS = ["markdown", "json", "html"] as const;
+export const OUTPUT_FORMATS = [
+	"markdown",
+	"json",
+	"html",
+	"pr-comments",
+] as const;
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 
 /**

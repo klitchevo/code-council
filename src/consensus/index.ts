@@ -16,6 +16,15 @@ export {
 	findingSimilarity,
 	groupByConfidence,
 } from "./clustering";
+// PR comment mapping
+export type { MappedComment, MappingResult } from "./comment-mapper";
+export {
+	countMappedComments,
+	countUnmappedFindings,
+	filterCommentsBySeverity,
+	groupCommentsByFile,
+	mapClustersToComments,
+} from "./comment-mapper";
 // Core classes and functions
 export { ConsensusClient } from "./consensus-client";
 export {
@@ -34,6 +43,13 @@ export {
 	normalizeLocation,
 	normalizeSeverity,
 } from "./normalizer";
+// PR comment formatting
+export type {
+	FormatOptions as PrCommentFormatOptions,
+	GitHubPrComment,
+	GitHubPrReview,
+} from "./pr-comment-formatter";
+export { formatPrComments, serializePrReview } from "./pr-comment-formatter";
 export {
 	calculateConfidence,
 	calculateStats,

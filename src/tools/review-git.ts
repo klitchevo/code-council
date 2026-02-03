@@ -19,7 +19,7 @@ const gitReviewSchemaObj = z.object({
 		.optional()
 		.describe("Additional context about the changes"),
 	output_format: z
-		.enum(["markdown", "json", "html"])
+		.enum(["markdown", "json", "html", "pr-comments"])
 		.optional()
 		.describe("Output format for the review (default: markdown)"),
 });
@@ -91,6 +91,7 @@ export async function handleGitReview(
 		: never;
 	models: string[];
 	reviewType: string;
+	diffText: string;
 }> {
 	const reviewType = input.review_type || "staged";
 
@@ -111,5 +112,6 @@ export async function handleGitReview(
 		results,
 		models,
 		reviewType,
+		diffText: diff,
 	};
 }

@@ -50,8 +50,8 @@ import {
 const args = process.argv.slice(2);
 const command = args[0];
 
-// Handle CLI review command (async)
-if (command === "review") {
+// Handle CLI review and setup commands (async)
+if (command === "review" || command === "setup") {
 	// Dynamic import to avoid loading CLI code when not needed
 	import("./cli").then(async ({ processResult, runCli }) => {
 		try {
@@ -128,9 +128,10 @@ Code Council - Multi-model AI code review MCP server
 Usage: npx @klitchevo/code-council [command]
 
 Commands:
-  review <type>   Run a multi-model code review (code, git, frontend, backend, plan)
-  init            Generate a configuration file with default values
-  (none)          Start the MCP server (requires OPENROUTER_API_KEY)
+  review <type>     Run a multi-model code review (code, git, frontend, backend, plan)
+  setup workflow    Generate GitHub Actions workflow for PR reviews
+  init              Generate a configuration file with default values
+  (none)            Start the MCP server (requires OPENROUTER_API_KEY)
 
 Review Types:
   code       Review code from stdin or file
@@ -140,10 +141,10 @@ Review Types:
   plan       Review implementation plans
 
 Examples:
+  npx @klitchevo/code-council setup workflow
   npx @klitchevo/code-council review git
-  npx @klitchevo/code-council review git --review-type diff
+  npx @klitchevo/code-council review git --review-type diff --format pr-comments
   echo "const x = 1" | npx @klitchevo/code-council review code
-  npx @klitchevo/code-council review --help
 
 For MCP server usage, configure in your MCP client settings.
 See: https://github.com/klitchevo/code-council

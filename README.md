@@ -102,6 +102,9 @@ Run reviews directly from command line:
 # Review git changes
 npx @klitchevo/code-council review git --review-type diff
 
+# Review with inline PR comments format (for GitHub Actions)
+npx @klitchevo/code-council review git --review-type diff --format pr-comments
+
 # Review code from stdin
 echo "function foo() {}" | npx @klitchevo/code-council review code
 
@@ -116,7 +119,25 @@ npx @klitchevo/code-council review --help
 
 ## GitHub Actions
 
-Automatically review PRs with multiple AI models:
+Automatically review PRs with multiple AI models. Findings appear as **inline comments** on the exact lines of code.
+
+### Quick Setup
+
+Generate the workflow file automatically:
+
+```bash
+npx @klitchevo/code-council setup workflow
+```
+
+This creates `.github/workflows/code-council-review.yml` with inline PR comments enabled.
+
+**Options:**
+- `--simple` - Use markdown format instead of inline comments
+- `--force` - Overwrite existing workflow file
+
+### Manual Setup
+
+Or create the workflow manually:
 
 ```yaml
 name: Code Council Review
@@ -148,8 +169,8 @@ jobs:
         run: |
           npx @klitchevo/code-council review git \
             --review-type diff \
-            --format markdown \
-            > review.md
+            --format pr-comments \
+            > review.json
 
       - name: Post Review
         env:
@@ -157,11 +178,10 @@ jobs:
         run: |
           gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
             --method POST \
-            -f body="$(cat review.md)" \
-            -f event="COMMENT"
+            --input review.json
 ```
 
-Add `OPENROUTER_API_KEY` to your repository secrets.
+Add `OPENROUTER_API_KEY` to your repository secrets (Settings > Secrets > Actions).
 
 ## Use Cases
 

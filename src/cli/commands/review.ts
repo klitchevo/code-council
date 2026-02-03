@@ -4,9 +4,20 @@
  */
 
 import { initializeConfig } from "../../config";
-import { formatForHostExtraction } from "../../consensus/builder";
+import {
+	buildConsensusReport,
+	formatForHostExtraction,
+} from "../../consensus/builder";
+import { mapClustersToComments } from "../../consensus/comment-mapper";
+import { ConsensusClient } from "../../consensus/consensus-client";
+import {
+	formatPrComments,
+	serializePrReview,
+} from "../../consensus/pr-comment-formatter";
+import type { ModelReviewResult } from "../../review-client";
 import { ReviewClient } from "../../review-client";
 import { handleGitReview } from "../../tools/review-git";
+import { parseUnifiedDiff } from "../../utils/diff-parser";
 import { getInput } from "../input";
 import {
 	type BackendReviewType,
@@ -50,7 +61,7 @@ Review Types:
 
 Common Options:
   --models "<m1>,<m2>"    Override default models (comma-separated)
-  --format <format>       Output format: markdown (default), json, html
+  --format <format>       Output format: markdown (default), json, html, pr-comments
   --context "<text>"      Additional context for the review
   --file <path>           Read input from file instead of stdin
   --help, -h              Show this help message
@@ -270,6 +281,11 @@ async function handleCliGitReview(
 		output_format: format,
 	});
 
+	// Handle pr-comments format specially - needs consensus building
+	if (format === "pr-comments") {
+		return formatPrCommentsOutput(result.results, result.diffText, client);
+	}
+
 	return formatReviewOutput(result.results, format);
 }
 
@@ -378,5 +394,42 @@ function formatReviewOutput(
 	return {
 		exitCode: ExitCode.SUCCESS,
 		stdout: formatted,
+	};
+}
+
+/**
+ * Format review results as GitHub PR comments
+ * Builds full consensus report and maps findings to diff lines
+ */
+async function formatPrCommentsOutput(
+	results: ModelReviewResult[],
+	diffText: string,
+	reviewClient: ReviewClient,
+): Promise<CliResult> {
+	// 1. Build full consensus report (not host extraction)
+	const consensusClient = new ConsensusClient(reviewClient);
+	const { report } = await buildConsensusReport(results, consensusClient, {
+		outputFormat: "json", // Internal format, we'll reformat for PR
+	});
+
+	// 2. Parse diff to get changed lines
+	const parsedDiff = parseUnifiedDiff(diffText);
+
+	// 3. Collect all finding clusters
+	const allClusters = [
+		...report.highConfidence,
+		...report.moderateConfidence,
+		...report.lowConfidence,
+	];
+
+	// 4. Map findings to diff line positions
+	const mappingResult = mapClustersToComments(allClusters, parsedDiff);
+
+	// 5. Format as GitHub API JSON
+	const prReview = formatPrComments(report, mappingResult);
+
+	return {
+		exitCode: ExitCode.SUCCESS,
+		stdout: serializePrReview(prReview),
 	};
 }

@@ -37,20 +37,46 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
+          # Run review with pr-comments format for inline comments
           npx @klitchevo/code-council review git \
             --review-type diff \
-            --format markdown \
-            > review.md
+            --format pr-comments \
+            > review.json 2>&1 || {
+              # If pr-comments fails, fall back to markdown format
+              echo "pr-comments format failed, falling back to markdown"
+              npx @klitchevo/code-council review git \
+                --review-type diff \
+                --format markdown \
+                > review.md
+              echo "format=markdown" >> $GITHUB_OUTPUT
+              if [ -s review.md ]; then
+                echo "has_review=true" >> $GITHUB_OUTPUT
+              else
+                echo "has_review=false" >> $GITHUB_OUTPUT
+              fi
+              exit 0
+            }
 
-          # Check if review has content
-          if [ -s review.md ]; then
+          # Check if review JSON has content
+          if [ -s review.json ] && [ "$(cat review.json | head -c 10)" != "Error" ]; then
             echo "has_review=true" >> $GITHUB_OUTPUT
+            echo "format=pr-comments" >> $GITHUB_OUTPUT
           else
             echo "has_review=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Post Review
-        if: steps.review.outputs.has_review == 'true'
+      - name: Post Inline Review
+        if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Post PR review with inline comments
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+            --method POST \
+            --input review.json
+
+      - name: Post Markdown Review (Fallback)
+        if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'markdown'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

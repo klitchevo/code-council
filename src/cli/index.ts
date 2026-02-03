@@ -4,6 +4,7 @@
  */
 
 import { handleReviewCommand } from "./commands/review";
+import { handleSetupCommand } from "./commands/setup";
 import { type CliResult, ExitCode, type ParsedCliArgs } from "./types";
 
 /**
@@ -75,6 +76,7 @@ Usage: npx @klitchevo/code-council <command> [options]
 
 Commands:
   review <type>   Run a multi-model code review
+  setup workflow  Generate GitHub Actions workflow for PR reviews
   init            Generate a configuration file
   (none)          Start the MCP server (requires OPENROUTER_API_KEY)
 
@@ -89,6 +91,9 @@ Options:
   --help, -h      Show help for command
 
 Examples:
+  # Generate GitHub Actions workflow
+  npx @klitchevo/code-council setup workflow
+
   # Review staged git changes
   npx @klitchevo/code-council review git
 
@@ -114,6 +119,11 @@ export async function runCli(argv: string[]): Promise<CliResult | null> {
 	// Handle review command
 	if (parsed.command === "review") {
 		return handleReviewCommand(parsed);
+	}
+
+	// Handle setup command
+	if (parsed.command === "setup") {
+		return handleSetupCommand(parsed);
 	}
 
 	// Handle help
