@@ -37,6 +37,21 @@ function generateFindingId(): FindingId {
 function repairJson(jsonStr: string): string {
 	let repaired = jsonStr;
 
+	// Fix bad escape sequences (e.g., \' which is invalid in JSON)
+	// Replace invalid escapes with their unescaped version or valid alternatives
+	repaired = repaired.replace(/\\'/g, "'");
+	repaired = repaired.replace(/\\`/g, "`");
+
+	// Fix unescaped control characters in strings
+	// Replace literal newlines/tabs inside strings with escaped versions
+	repaired = repaired.replace(/"([^"]*?)"/g, (_, content) => {
+		const fixed = content
+			.replace(/\n/g, "\\n")
+			.replace(/\r/g, "\\r")
+			.replace(/\t/g, "\\t");
+		return `"${fixed}"`;
+	});
+
 	// Remove trailing commas before } or ]
 	repaired = repaired.replace(/,(\s*[}\]])/g, "$1");
 

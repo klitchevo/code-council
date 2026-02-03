@@ -66,14 +66,15 @@ diff --git a/src/bar.ts b/src/bar.ts
 			expect(result.unmapped).toHaveLength(0);
 		});
 
-		it("should not map cluster with line not in changed lines", () => {
-			const clusters = [createCluster("1", "src/foo.ts", 1)]; // Line 1 not changed
+		it("should map cluster with line near changed lines (within tolerance)", () => {
+			const clusters = [createCluster("1", "src/foo.ts", 1)]; // Line 1 is near line 2 which is changed
 
 			const result = mapClustersToComments(clusters, sampleDiff);
 
-			expect(result.comments).toHaveLength(0);
-			expect(result.unmapped).toHaveLength(1);
-			expect(result.unmapped[0]?.id).toBe("cluster-1");
+			// Now maps to nearest changed line (line 2)
+			expect(result.comments).toHaveLength(1);
+			expect(result.comments[0]?.line).toBe(2);
+			expect(result.unmapped).toHaveLength(0);
 		});
 
 		it("should not map cluster with file not in diff", () => {
@@ -94,19 +95,21 @@ diff --git a/src/bar.ts b/src/bar.ts
 			expect(result.unmapped).toHaveLength(1);
 		});
 
-		it("should not map cluster with file but no line", () => {
+		it("should map cluster with file but no line to first changed line", () => {
 			const clusters = [createCluster("1", "src/foo.ts", undefined)];
 
 			const result = mapClustersToComments(clusters, sampleDiff);
 
-			expect(result.comments).toHaveLength(0);
-			expect(result.unmapped).toHaveLength(1);
+			// Now maps to first changed line in the file (line 2)
+			expect(result.comments).toHaveLength(1);
+			expect(result.comments[0]?.line).toBe(2);
+			expect(result.unmapped).toHaveLength(0);
 		});
 
 		it("should handle multiple clusters with mixed mappability", () => {
 			const clusters = [
 				createCluster("1", "src/foo.ts", 2), // Valid - changed line
-				createCluster("2", "src/foo.ts", 1), // Invalid - unchanged line
+				createCluster("2", "src/foo.ts", 1), // Valid - near changed line (maps to line 2)
 				createCluster("3", "src/bar.ts", 8), // Valid - changed line
 				createCluster("4", "src/baz.ts", 5), // Invalid - file not in diff
 				createCluster("5", undefined, undefined), // Invalid - no location
@@ -114,10 +117,12 @@ diff --git a/src/bar.ts b/src/bar.ts
 
 			const result = mapClustersToComments(clusters, sampleDiff);
 
-			expect(result.comments).toHaveLength(2);
+			// cluster-1, cluster-2, cluster-3 all get mapped (cluster-2 maps to nearest changed line)
+			expect(result.comments).toHaveLength(3);
 			expect(result.comments[0]?.cluster.id).toBe("cluster-1");
-			expect(result.comments[1]?.cluster.id).toBe("cluster-3");
-			expect(result.unmapped).toHaveLength(3);
+			expect(result.comments[1]?.cluster.id).toBe("cluster-2");
+			expect(result.comments[2]?.cluster.id).toBe("cluster-3");
+			expect(result.unmapped).toHaveLength(2);
 		});
 
 		it("should handle normalized path with ./ prefix", () => {
@@ -167,7 +172,7 @@ diff --git a/src/bar.ts b/src/bar.ts
 	describe("countUnmappedFindings", () => {
 		it("should return count of unmapped findings", () => {
 			const clusters = [
-				createCluster("1", "src/foo.ts", 1), // Unchanged line
+				createCluster("1", "src/foo.ts", 100), // Line too far from changed lines (line 2-3)
 				createCluster("2", "src/baz.ts", 5), // File not in diff
 			];
 			const result = mapClustersToComments(clusters, sampleDiff);

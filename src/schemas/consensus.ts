@@ -72,7 +72,8 @@ export const ExtractionResponseSchema = z.object({
 				.nullish(),
 			suggestion: z.string().nullish(),
 			suggestedCode: z.string().nullish(),
-			rawExcerpt: z.string(),
+			// Make rawExcerpt optional - extraction model sometimes omits it
+			rawExcerpt: z.string().optional().default(""),
 			confidence: z.number().min(0).max(1).nullish(),
 		}),
 	),
