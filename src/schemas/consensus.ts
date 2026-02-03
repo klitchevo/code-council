@@ -50,14 +50,14 @@ export const ExtractionResponseSchema = z.object({
 			location: z
 				.object({
 					file: z.string(),
-					line: z.number().optional(),
-					endLine: z.number().optional(),
+					line: z.number().nullish(),
+					endLine: z.number().nullish(),
 				})
-				.optional(),
-			suggestion: z.string().optional(),
-			suggestedCode: z.string().optional(),
+				.nullish(),
+			suggestion: z.string().nullish(),
+			suggestedCode: z.string().nullish(),
 			rawExcerpt: z.string(),
-			confidence: z.number().min(0).max(1).optional(),
+			confidence: z.number().min(0).max(1).nullish(),
 		}),
 	),
 });
