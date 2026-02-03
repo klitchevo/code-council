@@ -248,7 +248,7 @@ async function handleCliCodeReview(
 	// Call ReviewClient directly with CLI models
 	const results = await client.reviewCode(inputResult, models, fullContext);
 
-	return formatReviewOutput(results, format);
+	return formatReviewOutput(results, format, client);
 }
 
 /**
@@ -286,7 +286,7 @@ async function handleCliGitReview(
 		return formatPrCommentsOutput(result.results, result.diffText, client);
 	}
 
-	return formatReviewOutput(result.results, format);
+	return formatReviewOutput(result.results, format, client);
 }
 
 /**
@@ -317,7 +317,7 @@ async function handleCliFrontendReview(
 		context,
 	});
 
-	return formatReviewOutput(results, format);
+	return formatReviewOutput(results, format, client);
 }
 
 /**
@@ -348,7 +348,7 @@ async function handleCliBackendReview(
 		context,
 	});
 
-	return formatReviewOutput(results, format);
+	return formatReviewOutput(results, format, client);
 }
 
 /**
@@ -377,24 +377,38 @@ async function handleCliPlanReview(
 		context,
 	});
 
-	return formatReviewOutput(results, format);
+	return formatReviewOutput(results, format, client);
 }
 
 /**
  * Format review results for CLI output
- * Uses host extraction format for consistent multi-model output
+ * Builds actual consensus report instead of just dumping raw reviews
  */
-function formatReviewOutput(
+async function formatReviewOutput(
 	results: Array<{ model: string; review: string; error?: string }>,
 	format: OutputFormat,
-): CliResult {
-	// Use the existing formatForHostExtraction which produces nice output
-	const { formatted } = formatForHostExtraction(results, format);
+	reviewClient: ReviewClient,
+): Promise<CliResult> {
+	// Build actual consensus report (not host extraction)
+	const consensusClient = new ConsensusClient(reviewClient);
 
-	return {
-		exitCode: ExitCode.SUCCESS,
-		stdout: formatted,
-	};
+	try {
+		const { formatted } = await buildConsensusReport(results, consensusClient, {
+			outputFormat: format,
+		});
+
+		return {
+			exitCode: ExitCode.SUCCESS,
+			stdout: formatted,
+		};
+	} catch (error) {
+		// Fallback to host extraction format if consensus fails
+		const { formatted } = formatForHostExtraction(results, format);
+		return {
+			exitCode: ExitCode.SUCCESS,
+			stdout: formatted,
+		};
+	}
 }
 
 /**
