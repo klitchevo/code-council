@@ -66,10 +66,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Post PR review with inline comments
-          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
-            --method POST \
-            --input review.json
+          # Debug: show review.json content
+          echo "=== review.json content ==="
+          cat review.json
+          echo ""
+          echo "=== validating JSON ==="
+          if jq . review.json > /dev/null 2>&1; then
+            echo "JSON is valid"
+            # Post PR review with inline comments
+            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+              --method POST \
+              --input review.json
+          else
+            echo "Invalid JSON in review.json"
+            exit 1
+          fi
 
       - name: Post Markdown Review (Fallback)
         if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'markdown'
