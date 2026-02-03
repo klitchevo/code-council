@@ -96,6 +96,48 @@ function createClusterTitle(findings: Finding[]): string {
 }
 
 /**
+ * Common security issue keywords that indicate the same type of vulnerability
+ * Maps keyword patterns to canonical issue types
+ */
+const ISSUE_KEYWORDS: Record<string, string[]> = {
+	sql_injection: ["sql", "injection", "sqli", "cwe-89", "query"],
+	xss: ["xss", "cross-site", "scripting", "cwe-79", "sanitiz"],
+	command_injection: ["command", "injection", "exec", "shell", "cwe-78", "rce"],
+	hardcoded_secrets: [
+		"hardcoded",
+		"secret",
+		"credential",
+		"password",
+		"api key",
+		"cwe-798",
+	],
+	auth_bypass: ["auth", "bypass", "backdoor", "authentication"],
+	weak_crypto: ["crypto", "random", "math.random", "weak", "cwe-338"],
+	info_disclosure: ["disclosure", "exposure", "logging", "cwe-532"],
+	race_condition: ["race", "condition", "toctou", "concurrent"],
+	memory_leak: ["memory", "leak", "unbounded", "cache"],
+	missing_validation: ["validation", "sanitiz", "escape", "input"],
+};
+
+/**
+ * Extract canonical issue types from text
+ */
+function extractIssueTypes(text: string): Set<string> {
+	const lower = text.toLowerCase();
+	const types = new Set<string>();
+
+	for (const [issueType, keywords] of Object.entries(ISSUE_KEYWORDS)) {
+		for (const keyword of keywords) {
+			if (lower.includes(keyword)) {
+				types.add(issueType);
+				break;
+			}
+		}
+	}
+	return types;
+}
+
+/**
  * Calculate basic text similarity between two strings (Jaccard index of words)
  */
 function textSimilarity(
@@ -104,6 +146,24 @@ function textSimilarity(
 ): number {
 	const t1 = text1 ?? "";
 	const t2 = text2 ?? "";
+
+	// First check for matching issue types (concept-level matching)
+	const types1 = extractIssueTypes(t1);
+	const types2 = extractIssueTypes(t2);
+	if (types1.size > 0 && types2.size > 0) {
+		let typeOverlap = 0;
+		for (const type of types1) {
+			if (types2.has(type)) {
+				typeOverlap++;
+			}
+		}
+		if (typeOverlap > 0) {
+			// Same issue type = high similarity
+			return 0.8 + typeOverlap * 0.05;
+		}
+	}
+
+	// Fall back to word-level Jaccard
 	const words1 = new Set(
 		t1
 			.toLowerCase()
