@@ -40,16 +40,16 @@ function repairJson(jsonStr: string): string {
 	// Remove trailing commas before } or ]
 	repaired = repaired.replace(/,(\s*[}\]])/g, "$1");
 
-	// Fix unescaped newlines inside strings (common in suggestedCode)
-	// This is tricky - we need to be inside a string value
-	// Simple approach: replace actual newlines that aren't \n with \\n
-	repaired = repaired.replace(/"([^"]*(?:\\"[^"]*)*)"/g, (match) => {
-		// Replace actual newlines with escaped newlines inside the string
-		return match
-			.replace(/\n/g, "\\n")
-			.replace(/\r/g, "\\r")
-			.replace(/\t/g, "\\t");
-	});
+	// Strip suggestedCode fields entirely - they cause too many JSON issues
+	// Match "suggestedCode": "..." or "suggestedCode": null
+	repaired = repaired.replace(
+		/"suggestedCode"\s*:\s*(?:"(?:[^"\\]|\\.)*"|null)\s*,?/g,
+		"",
+	);
+
+	// Clean up any double commas or trailing commas we may have created
+	repaired = repaired.replace(/,\s*,/g, ",");
+	repaired = repaired.replace(/,(\s*[}\]])/g, "$1");
 
 	return repaired;
 }

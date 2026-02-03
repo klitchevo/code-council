@@ -40,11 +40,27 @@ export const FindingSchema = z.object({
 /**
  * Schema for LLM extraction response (what the extraction prompt returns)
  */
+/**
+ * Transform severity to lowercase and validate
+ */
+const severitySchema = z
+	.string()
+	.transform((val) => val.toLowerCase())
+	.pipe(z.enum(FINDING_SEVERITIES));
+
+/**
+ * Transform category to lowercase and validate
+ */
+const categorySchema = z
+	.string()
+	.transform((val) => val.toLowerCase())
+	.pipe(z.enum(FINDING_CATEGORIES));
+
 export const ExtractionResponseSchema = z.object({
 	findings: z.array(
 		z.object({
-			category: z.enum(FINDING_CATEGORIES),
-			severity: z.enum(FINDING_SEVERITIES),
+			category: categorySchema,
+			severity: severitySchema,
 			title: z.string(),
 			description: z.string(),
 			location: z

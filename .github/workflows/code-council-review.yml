@@ -74,14 +74,7 @@ jobs:
             gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments/$COMMENT_ID \
               --method DELETE 2>/dev/null || true
           done
-
-          # Also dismiss previous Code Council reviews
-          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
-            --jq '.[] | select(.body | contains("Code Council Multi-Model Review")) | .id' | \
-          while read REVIEW_ID; do
-            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/$REVIEW_ID \
-              --method DELETE 2>/dev/null || true
-          done
+          # Note: Can't delete submitted reviews, only pending ones. Old reviews will remain but new one will be added.
 
       - name: Post Inline Review
         if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
