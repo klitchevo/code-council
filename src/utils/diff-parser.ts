@@ -70,7 +70,7 @@ export function parseUnifiedDiff(diffText: string): ParsedDiff {
 
 			// Extract paths from diff --git a/path b/path
 			const match = line.match(/^diff --git a\/(.+) b\/(.+)$/);
-			if (match && match[1] && match[2]) {
+			if (match?.[1] && match[2]) {
 				currentFile = {
 					oldPath: match[1],
 					newPath: match[2],
@@ -106,7 +106,7 @@ export function parseUnifiedDiff(diffText: string): ParsedDiff {
 			const hunkMatch = line.match(
 				/@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/,
 			);
-			if (hunkMatch && hunkMatch[1] && hunkMatch[3]) {
+			if (hunkMatch?.[1] && hunkMatch[3]) {
 				const hunk: DiffHunk = {
 					oldStart: parseInt(hunkMatch[1], 10),
 					oldCount: hunkMatch[2] ? parseInt(hunkMatch[2], 10) : 1,

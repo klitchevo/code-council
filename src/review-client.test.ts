@@ -10,7 +10,6 @@ vi.mock("@openrouter/sdk", () => {
 			chat = {
 				send: mockSend,
 			};
-			constructor(_config: any) {}
 		},
 	};
 });

@@ -385,7 +385,7 @@ function toNumber(val: unknown): number | null {
 	if (typeof val === "number") return val;
 	if (typeof val === "string") {
 		const n = parseFloat(val);
-		return isNaN(n) ? null : n;
+		return Number.isNaN(n) ? null : n;
 	}
 	return null;
 }

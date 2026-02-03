@@ -638,7 +638,7 @@ describe("repo-scanner", () => {
 		it("should detect Google API keys", () => {
 			const googlePattern = /AIza[0-9A-Za-z_-]{35}/;
 			// Build fake key dynamically to avoid secret scanner false positives
-			const fakeKey = "AIza" + "Sy" + "0".repeat(33);
+			const fakeKey = `AIzaSy${"0".repeat(33)}`;
 			expect(googlePattern.test(fakeKey)).toBe(true);
 		});
 

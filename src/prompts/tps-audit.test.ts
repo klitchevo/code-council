@@ -145,7 +145,7 @@ describe("tps-audit prompts", () => {
 		});
 
 		it("should handle JSON in markdown code blocks", () => {
-			const wrapped = "```json\n" + JSON.stringify(validAnalysis) + "\n```";
+			const wrapped = `\`\`\`json\n${JSON.stringify(validAnalysis)}\n\`\`\``;
 			const result = parseTpsAnalysis(wrapped);
 
 			expect(result).not.toBeNull();
@@ -153,7 +153,7 @@ describe("tps-audit prompts", () => {
 		});
 
 		it("should handle JSON in plain code blocks", () => {
-			const wrapped = "```\n" + JSON.stringify(validAnalysis) + "\n```";
+			const wrapped = `\`\`\`\n${JSON.stringify(validAnalysis)}\n\`\`\``;
 			const result = parseTpsAnalysis(wrapped);
 
 			expect(result).not.toBeNull();
@@ -183,7 +183,7 @@ describe("tps-audit prompts", () => {
 		});
 
 		it("should handle whitespace around JSON", () => {
-			const json = "  \n" + JSON.stringify(validAnalysis) + "\n  ";
+			const json = `  \n${JSON.stringify(validAnalysis)}\n  `;
 			const result = parseTpsAnalysis(json);
 
 			expect(result).not.toBeNull();

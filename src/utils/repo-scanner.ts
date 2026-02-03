@@ -250,7 +250,7 @@ function isSensitiveFile(filename: string): boolean {
 		// Simple glob matching
 		if (pattern.includes("*")) {
 			const regex = new RegExp(
-				"^" + pattern.replace(/\./g, "\\.").replace(/\*/g, ".*") + "$",
+				`^${pattern.replace(/\./g, "\\.").replace(/\*/g, ".*")}$`,
 				"i",
 			);
 			if (regex.test(lowerName)) {

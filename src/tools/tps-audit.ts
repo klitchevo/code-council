@@ -378,8 +378,6 @@ export function formatTpsAuditResults(auditResult: TpsAuditResult): string {
 			);
 			break;
 		}
-
-		case "markdown":
 		default: {
 			const parts: string[] = [];
 

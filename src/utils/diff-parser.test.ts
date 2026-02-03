@@ -32,11 +32,11 @@ index 1234567..abcdefg 100644
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.oldPath).toBe("src/index.ts");
-			expect(result.files[0]!.newPath).toBe("src/index.ts");
-			expect(result.files[0]!.hunks).toHaveLength(1);
-			expect(result.files[0]!.changedLines.has(2)).toBe(true);
-			expect(result.files[0]!.changedLines.size).toBe(1);
+			expect(result.files[0]?.oldPath).toBe("src/index.ts");
+			expect(result.files[0]?.newPath).toBe("src/index.ts");
+			expect(result.files[0]?.hunks).toHaveLength(1);
+			expect(result.files[0]?.changedLines.has(2)).toBe(true);
+			expect(result.files[0]?.changedLines.size).toBe(1);
 		});
 
 		it("should parse multiple hunks in a single file", () => {
@@ -61,10 +61,10 @@ index 1234567..abcdefg 100644
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.hunks).toHaveLength(2);
-			expect(result.files[0]!.changedLines.has(8)).toBe(true);
-			expect(result.files[0]!.changedLines.has(24)).toBe(true);
-			expect(result.files[0]!.changedLines.size).toBe(2);
+			expect(result.files[0]?.hunks).toHaveLength(2);
+			expect(result.files[0]?.changedLines.has(8)).toBe(true);
+			expect(result.files[0]?.changedLines.has(24)).toBe(true);
+			expect(result.files[0]?.changedLines.size).toBe(2);
 		});
 
 		it("should parse multiple files in a diff", () => {
@@ -88,10 +88,10 @@ diff --git a/src/bar.ts b/src/bar.ts
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(2);
-			expect(result.files[0]!.newPath).toBe("src/foo.ts");
-			expect(result.files[0]!.changedLines.has(2)).toBe(true);
-			expect(result.files[1]!.newPath).toBe("src/bar.ts");
-			expect(result.files[1]!.changedLines.has(2)).toBe(true);
+			expect(result.files[0]?.newPath).toBe("src/foo.ts");
+			expect(result.files[0]?.changedLines.has(2)).toBe(true);
+			expect(result.files[1]?.newPath).toBe("src/bar.ts");
+			expect(result.files[1]?.changedLines.has(2)).toBe(true);
 		});
 
 		it("should handle deleted lines (not in changedLines)", () => {
@@ -107,7 +107,7 @@ diff --git a/src/bar.ts b/src/bar.ts
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.changedLines.size).toBe(0);
+			expect(result.files[0]?.changedLines.size).toBe(0);
 		});
 
 		it("should handle mixed additions and deletions", () => {
@@ -125,8 +125,8 @@ diff --git a/src/bar.ts b/src/bar.ts
 
 			expect(result.files).toHaveLength(1);
 			// The replacement line should be tracked
-			expect(result.files[0]!.changedLines.has(2)).toBe(true);
-			expect(result.files[0]!.changedLines.size).toBe(1);
+			expect(result.files[0]?.changedLines.has(2)).toBe(true);
+			expect(result.files[0]?.changedLines.size).toBe(1);
 		});
 
 		it("should parse hunk headers without count (implies count of 1)", () => {
@@ -140,10 +140,10 @@ diff --git a/src/bar.ts b/src/bar.ts
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.hunks).toHaveLength(1);
-			expect(result.files[0]!.hunks[0]!.oldCount).toBe(1);
-			expect(result.files[0]!.hunks[0]!.newCount).toBe(2);
-			expect(result.files[0]!.changedLines.has(2)).toBe(true);
+			expect(result.files[0]?.hunks).toHaveLength(1);
+			expect(result.files[0]?.hunks[0]?.oldCount).toBe(1);
+			expect(result.files[0]?.hunks[0]?.newCount).toBe(2);
+			expect(result.files[0]?.changedLines.has(2)).toBe(true);
 		});
 
 		it("should handle new files (--- /dev/null)", () => {
@@ -160,10 +160,10 @@ index 0000000..1234567
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.newPath).toBe("src/new-file.ts");
-			expect(result.files[0]!.changedLines.has(1)).toBe(true);
-			expect(result.files[0]!.changedLines.has(2)).toBe(true);
-			expect(result.files[0]!.changedLines.has(3)).toBe(true);
+			expect(result.files[0]?.newPath).toBe("src/new-file.ts");
+			expect(result.files[0]?.changedLines.has(1)).toBe(true);
+			expect(result.files[0]?.changedLines.has(2)).toBe(true);
+			expect(result.files[0]?.changedLines.has(3)).toBe(true);
 		});
 
 		it("should handle deleted files (+++ /dev/null)", () => {
@@ -180,9 +180,9 @@ index 1234567..0000000
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.oldPath).toBe("src/deleted.ts");
+			expect(result.files[0]?.oldPath).toBe("src/deleted.ts");
 			// No changed lines since everything is deleted
-			expect(result.files[0]!.changedLines.size).toBe(0);
+			expect(result.files[0]?.changedLines.size).toBe(0);
 		});
 
 		it("should handle 'No newline at end of file' marker", () => {
@@ -200,8 +200,8 @@ index 1234567..0000000
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.changedLines.has(2)).toBe(true);
-			expect(result.files[0]!.changedLines.has(3)).toBe(true);
+			expect(result.files[0]?.changedLines.has(2)).toBe(true);
+			expect(result.files[0]?.changedLines.has(3)).toBe(true);
 		});
 
 		it("should handle renamed files", () => {
@@ -221,9 +221,9 @@ index 1234567..abcdefg 100644
 			const result = parseUnifiedDiff(diff);
 
 			expect(result.files).toHaveLength(1);
-			expect(result.files[0]!.oldPath).toBe("src/old-name.ts");
-			expect(result.files[0]!.newPath).toBe("src/new-name.ts");
-			expect(result.files[0]!.changedLines.has(2)).toBe(true);
+			expect(result.files[0]?.oldPath).toBe("src/old-name.ts");
+			expect(result.files[0]?.newPath).toBe("src/new-name.ts");
+			expect(result.files[0]?.changedLines.has(2)).toBe(true);
 		});
 	});
 

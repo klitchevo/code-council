@@ -60,9 +60,9 @@ diff --git a/src/bar.ts b/src/bar.ts
 			const result = mapClustersToComments(clusters, sampleDiff);
 
 			expect(result.comments).toHaveLength(1);
-			expect(result.comments[0]!.path).toBe("src/foo.ts");
-			expect(result.comments[0]!.line).toBe(2);
-			expect(result.comments[0]!.cluster.id).toBe("cluster-1");
+			expect(result.comments[0]?.path).toBe("src/foo.ts");
+			expect(result.comments[0]?.line).toBe(2);
+			expect(result.comments[0]?.cluster.id).toBe("cluster-1");
 			expect(result.unmapped).toHaveLength(0);
 		});
 
@@ -73,7 +73,7 @@ diff --git a/src/bar.ts b/src/bar.ts
 
 			expect(result.comments).toHaveLength(0);
 			expect(result.unmapped).toHaveLength(1);
-			expect(result.unmapped[0]!.id).toBe("cluster-1");
+			expect(result.unmapped[0]?.id).toBe("cluster-1");
 		});
 
 		it("should not map cluster with file not in diff", () => {
@@ -115,8 +115,8 @@ diff --git a/src/bar.ts b/src/bar.ts
 			const result = mapClustersToComments(clusters, sampleDiff);
 
 			expect(result.comments).toHaveLength(2);
-			expect(result.comments[0]!.cluster.id).toBe("cluster-1");
-			expect(result.comments[1]!.cluster.id).toBe("cluster-3");
+			expect(result.comments[0]?.cluster.id).toBe("cluster-1");
+			expect(result.comments[1]?.cluster.id).toBe("cluster-3");
 			expect(result.unmapped).toHaveLength(3);
 		});
 
@@ -126,7 +126,7 @@ diff --git a/src/bar.ts b/src/bar.ts
 			const result = mapClustersToComments(clusters, sampleDiff);
 
 			expect(result.comments).toHaveLength(1);
-			expect(result.comments[0]!.path).toBe("src/foo.ts");
+			expect(result.comments[0]?.path).toBe("src/foo.ts");
 		});
 
 		it("should return empty results for empty clusters array", () => {
@@ -187,8 +187,8 @@ diff --git a/src/bar.ts b/src/bar.ts
 
 			const highAndAbove = filterCommentsBySeverity(result, "high");
 			expect(highAndAbove).toHaveLength(2);
-			expect(highAndAbove[0]!.cluster.severity).toBe("critical");
-			expect(highAndAbove[1]!.cluster.severity).toBe("high");
+			expect(highAndAbove[0]?.cluster.severity).toBe("critical");
+			expect(highAndAbove[1]?.cluster.severity).toBe("high");
 		});
 
 		it("should include all severities when filtering by info", () => {
@@ -211,7 +211,7 @@ diff --git a/src/bar.ts b/src/bar.ts
 
 			const criticalOnly = filterCommentsBySeverity(result, "critical");
 			expect(criticalOnly).toHaveLength(1);
-			expect(criticalOnly[0]!.cluster.severity).toBe("critical");
+			expect(criticalOnly[0]?.cluster.severity).toBe("critical");
 		});
 	});
 

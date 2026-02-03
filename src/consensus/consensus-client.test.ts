@@ -422,7 +422,7 @@ describe("ConsensusClient", () => {
 			(
 				mockReviewClient.chatMultiTurn as ReturnType<typeof vi.fn>
 			).mockResolvedValue("response");
-			await capturedChatFn!("system prompt", "user message");
+			await capturedChatFn?.("system prompt", "user message");
 
 			expect(mockReviewClient.chatMultiTurn).toHaveBeenCalledWith(
 				"anthropic/claude-3-haiku",

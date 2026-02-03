@@ -111,8 +111,8 @@ describe("clusterFindings", () => {
 		const clusters = clusterFindings(findings, allModels);
 
 		expect(clusters).toHaveLength(1);
-		expect(clusters[0]!.consensusType).toBe("single");
-		expect(clusters[0]!.agreeingModels).toContain("model1");
+		expect(clusters[0]?.consensusType).toBe("single");
+		expect(clusters[0]?.agreeingModels).toContain("model1");
 	});
 
 	it("clusters similar findings from different models", () => {
@@ -141,9 +141,9 @@ describe("clusterFindings", () => {
 
 		// Should cluster into one
 		expect(clusters).toHaveLength(1);
-		expect(clusters[0]!.consensusType).toBe("unanimous");
-		expect(clusters[0]!.agreeingModels).toHaveLength(3);
-		expect(clusters[0]!.silentModels).toHaveLength(0);
+		expect(clusters[0]?.consensusType).toBe("unanimous");
+		expect(clusters[0]?.agreeingModels).toHaveLength(3);
+		expect(clusters[0]?.silentModels).toHaveLength(0);
 	});
 
 	it("keeps different findings in separate clusters", () => {
@@ -185,9 +185,9 @@ describe("clusterFindings", () => {
 		const clusters = clusterFindings(findings, allModels);
 
 		expect(clusters).toHaveLength(1);
-		expect(clusters[0]!.consensusType).toBe("majority");
-		expect(clusters[0]!.agreeingModels).toHaveLength(2);
-		expect(clusters[0]!.silentModels).toHaveLength(1);
+		expect(clusters[0]?.consensusType).toBe("majority");
+		expect(clusters[0]?.agreeingModels).toHaveLength(2);
+		expect(clusters[0]?.silentModels).toHaveLength(1);
 	});
 
 	it("sorts clusters by severity then confidence", () => {
@@ -212,9 +212,9 @@ describe("clusterFindings", () => {
 		const clusters = clusterFindings(findings, allModels);
 
 		expect(clusters).toHaveLength(3);
-		expect(clusters[0]!.severity).toBe("critical");
-		expect(clusters[1]!.severity).toBe("medium");
-		expect(clusters[2]!.severity).toBe("low");
+		expect(clusters[0]?.severity).toBe("critical");
+		expect(clusters[1]?.severity).toBe("medium");
+		expect(clusters[2]?.severity).toBe("low");
 	});
 });
 

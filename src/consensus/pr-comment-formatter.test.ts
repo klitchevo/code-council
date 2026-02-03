@@ -100,12 +100,12 @@ describe("pr-comment-formatter", () => {
 
 			expect(result.event).toBe("COMMENT");
 			expect(result.comments).toHaveLength(1);
-			expect(result.comments[0]!.path).toBe("src/test.ts");
-			expect(result.comments[0]!.line).toBe(10);
-			expect(result.comments[0]!.body).toContain("[MEDIUM] Test Bug");
-			expect(result.comments[0]!.body).toContain("Bug");
-			expect(result.comments[0]!.body).toContain("2/3 models");
-			expect(result.comments[0]!.body).toContain("Confidence: 80%");
+			expect(result.comments[0]?.path).toBe("src/test.ts");
+			expect(result.comments[0]?.line).toBe(10);
+			expect(result.comments[0]?.body).toContain("[MEDIUM] Test Bug");
+			expect(result.comments[0]?.body).toContain("Bug");
+			expect(result.comments[0]?.body).toContain("2/3 models");
+			expect(result.comments[0]?.body).toContain("Confidence: 80%");
 			expect(result.body).toContain("Code Council Multi-Model Review");
 		});
 
@@ -125,8 +125,8 @@ describe("pr-comment-formatter", () => {
 
 			const result = formatPrComments(report, mappingResult);
 
-			expect(result.comments[0]!.body).toContain("This is a bug description");
-			expect(result.comments[0]!.body).toContain(
+			expect(result.comments[0]?.body).toContain("This is a bug description");
+			expect(result.comments[0]?.body).toContain(
 				"**Suggestion:** Fix it like this",
 			);
 		});
@@ -163,7 +163,7 @@ describe("pr-comment-formatter", () => {
 			const result = formatPrComments(report, mappingResult);
 
 			expect(result.comments).toHaveLength(1);
-			expect(result.comments[0]!.body).toContain("High Bug");
+			expect(result.comments[0]?.body).toContain("High Bug");
 		});
 
 		it("should include low severity when option is set", () => {
@@ -179,7 +179,7 @@ describe("pr-comment-formatter", () => {
 			});
 
 			expect(result.comments).toHaveLength(1);
-			expect(result.comments[0]!.body).toContain("Low Bug");
+			expect(result.comments[0]?.body).toContain("Low Bug");
 		});
 
 		it("should limit comments to maxComments option", () => {
@@ -222,9 +222,9 @@ describe("pr-comment-formatter", () => {
 				includeLowSeverity: true,
 			});
 
-			expect(result.comments[0]!.body).toContain("Critical Bug");
-			expect(result.comments[1]!.body).toContain("Medium Bug");
-			expect(result.comments[2]!.body).toContain("Low Bug");
+			expect(result.comments[0]?.body).toContain("Critical Bug");
+			expect(result.comments[1]?.body).toContain("Medium Bug");
+			expect(result.comments[2]?.body).toContain("Low Bug");
 		});
 
 		it("should hide model agreement when option is set", () => {
@@ -239,8 +239,8 @@ describe("pr-comment-formatter", () => {
 				showModelAgreement: false,
 			});
 
-			expect(result.comments[0]!.body).not.toContain("models");
-			expect(result.comments[0]!.body).not.toContain("Confidence:");
+			expect(result.comments[0]?.body).not.toContain("models");
+			expect(result.comments[0]?.body).not.toContain("Confidence:");
 		});
 
 		it("should include stats in summary body", () => {

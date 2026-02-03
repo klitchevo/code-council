@@ -43,13 +43,13 @@ function repairJson(jsonStr: string): string {
 	// Fix unescaped newlines inside strings (common in suggestedCode)
 	// This is tricky - we need to be inside a string value
 	// Simple approach: replace actual newlines that aren't \n with \\n
-	repaired = repaired.replace(
-		/"([^"]*(?:\\"[^"]*)*)"/g,
-		(match) => {
-			// Replace actual newlines with escaped newlines inside the string
-			return match.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
-		}
-	);
+	repaired = repaired.replace(/"([^"]*(?:\\"[^"]*)*)"/g, (match) => {
+		// Replace actual newlines with escaped newlines inside the string
+		return match
+			.replace(/\n/g, "\\n")
+			.replace(/\r/g, "\\r")
+			.replace(/\t/g, "\\t");
+	});
 
 	return repaired;
 }

@@ -22,7 +22,6 @@ export function formatReport(
 			return formatJson(report);
 		case "html":
 			return formatHtml(report);
-		case "markdown":
 		default:
 			return formatMarkdown(report);
 	}
