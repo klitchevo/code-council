@@ -44,13 +44,14 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # Run review with pr-comments format for inline comments
-          if code-council review git --review-type diff --format pr-comments > review.json 2>&1; then
+          # Note: stdout goes to file, stderr shows logs in console
+          if code-council review git --review-type diff --format pr-comments > review.json; then
             echo "format=pr-comments" >> $GITHUB_OUTPUT
             echo "has_review=true" >> $GITHUB_OUTPUT
           else
             echo "pr-comments format failed, falling back to markdown"
             cat review.json || true
-            if code-council review git --review-type diff --format markdown > review.md 2>&1; then
+            if code-council review git --review-type diff --format markdown > review.md; then
               echo "format=markdown" >> $GITHUB_OUTPUT
               echo "has_review=true" >> $GITHUB_OUTPUT
             else
