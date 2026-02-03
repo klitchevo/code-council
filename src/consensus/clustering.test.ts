@@ -60,11 +60,11 @@ describe("findingSimilarity", () => {
 		expect(similarity).toBeGreaterThan(0.7);
 	});
 
-	it("returns moderate similarity for same category, same file, no lines", () => {
+	it("returns high similarity for same category, same file, matching keywords", () => {
 		const f1 = createFinding({
 			sourceModel: "model1",
 			category: "security",
-			title: "Input validation",
+			title: "Input validation issue",
 			location: { file: "src/api.ts" },
 		});
 		const f2 = createFinding({
@@ -75,26 +75,30 @@ describe("findingSimilarity", () => {
 		});
 
 		const similarity = findingSimilarity(f1, f2);
-		expect(similarity).toBeGreaterThan(0.4);
-		expect(similarity).toBeLessThan(0.8);
+		// Keyword matching ("validation") boosts similarity
+		expect(similarity).toBeGreaterThan(0.8);
 	});
 
-	it("respects line proximity threshold", () => {
+	it("returns lower similarity for same file but distant lines without keyword match", () => {
 		const f1 = createFinding({
 			sourceModel: "model1",
+			category: "bug", // Use non-security category to avoid keyword matching
+			title: "Logic error in loop",
 			location: { file: "src/api.ts", line: 10 },
 		});
 		const f2 = createFinding({
 			sourceModel: "model2",
+			category: "bug",
+			title: "Off-by-one calculation",
 			location: { file: "src/api.ts", line: 50 },
 		});
 
-		// Lines are 40 apart (outside 5 line threshold)
-		// Same category gives 0.2 base, same file without line match gives some credit
-		// But distant lines mean no location match bonus
+		// Lines are 40 apart (outside proximity threshold)
+		// Same category gives base, same file gives some credit, but no keyword match
 		const similarity = findingSimilarity(f1, f2);
-		// Should be lower than nearby lines (which would be > 0.7)
+		// Should be moderate - same file helps but different lines and titles
 		expect(similarity).toBeLessThan(0.7);
+		expect(similarity).toBeGreaterThan(0.3);
 	});
 });
 

@@ -27,8 +27,8 @@ export interface ClusteringConfig {
 }
 
 const DEFAULT_CLUSTERING_CONFIG: ClusteringConfig = {
-	lineProximity: 5,
-	similarityThreshold: 0.7,
+	lineProximity: 15, // More lenient - models often point to different lines for same issue
+	similarityThreshold: 0.55, // Lower threshold - models describe same issues differently
 };
 
 /**
@@ -158,8 +158,8 @@ function textSimilarity(
 			}
 		}
 		if (typeOverlap > 0) {
-			// Same issue type = high similarity
-			return 0.8 + typeOverlap * 0.05;
+			// Same issue type = high similarity (capped at 1.0)
+			return Math.min(1.0, 0.8 + typeOverlap * 0.05);
 		}
 	}
 
@@ -208,6 +208,10 @@ export function findingSimilarity(
 		return 0.1;
 	}
 
+	// Different severities = reduced similarity (likely different issues)
+	const severityMatch = finding1.severity === finding2.severity;
+	const severityPenalty = severityMatch ? 0 : 0.15;
+
 	// Check location match
 	const locationMatch = locationsMatch(
 		finding1.location,
@@ -223,24 +227,35 @@ export function findingSimilarity(
 	let score = 0;
 
 	// Category match already checked
-	score += 0.2; // Base for same category
+	score += 0.25; // Base for same category
 
-	// Location match is important
-	if (locationMatch) {
-		// Same file and nearby line
-		if (finding1.location?.line && finding2.location?.line) {
-			score += 0.4;
-		} else if (finding1.location?.file && finding2.location?.file) {
-			// Same file, no lines
+	// Location scoring - same file is important even if lines differ
+	const sameFile =
+		finding1.location?.file &&
+		finding2.location?.file &&
+		finding1.location.file === finding2.location.file;
+
+	if (sameFile) {
+		if (locationMatch) {
+			// Same file and nearby line
+			score += 0.35;
+		} else {
+			// Same file but different lines - still somewhat similar
 			score += 0.2;
 		}
+	} else if (locationMatch) {
+		// Different files or no files but location matched somehow
+		score += 0.15;
 	}
 
 	// Text similarity
 	score += titleSim * 0.25;
 	score += descSim * 0.15;
 
-	return Math.min(1, score);
+	// Apply severity penalty if severities differ
+	score -= severityPenalty;
+
+	return Math.min(1, Math.max(0, score));
 }
 
 /**
