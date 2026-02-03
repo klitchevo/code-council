@@ -119,11 +119,7 @@ npx @klitchevo/code-council review --help
 
 ## GitHub Actions
 
-Automatically review PRs with multiple AI models. Findings appear as **inline comments** on the exact lines of code.
-
-**New in v0.2.1:**
-- Code fixes use GitHub's **suggestion syntax** - apply with one click
-- Re-runs **automatically clean up** old comments (no duplicates)
+Automatically review PRs with multiple AI models. Findings appear as **inline comments** on the exact lines of code. Code fixes use GitHub's **suggestion syntax** for one-click apply. Re-runs automatically clean up old comments.
 
 ### Quick Setup
 
