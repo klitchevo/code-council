@@ -103,9 +103,9 @@ describe("parseExtractionResponse", () => {
 
 		const findings = parseExtractionResponse(response, sourceModel);
 		expect(findings).toHaveLength(3);
-		expect(findings[0]!.category).toBe("security");
-		expect(findings[1]!.category).toBe("performance");
-		expect(findings[2]!.category).toBe("bug");
+		expect(findings[0]?.category).toBe("security");
+		expect(findings[1]?.category).toBe("performance");
+		expect(findings[2]?.category).toBe("bug");
 	});
 
 	it("generates unique IDs for each finding", () => {
@@ -129,7 +129,7 @@ describe("parseExtractionResponse", () => {
 		});
 
 		const findings = parseExtractionResponse(response, sourceModel);
-		expect(findings[0]!.id).not.toBe(findings[1]!.id);
+		expect(findings[0]?.id).not.toBe(findings[1]?.id);
 	});
 
 	it("sets extractedAt timestamp", () => {

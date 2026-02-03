@@ -35,11 +35,11 @@ describe("InMemorySessionStore", () => {
 			expect(session.models).toEqual(["model1", "model2"]);
 			expect(session.modelConversations.model1).toBeDefined();
 			expect(session.modelConversations.model2).toBeDefined();
-			expect(session.modelConversations.model1!.messages).toHaveLength(2);
-			expect(session.modelConversations.model1!.messages[0]!.role).toBe(
+			expect(session.modelConversations.model1?.messages).toHaveLength(2);
+			expect(session.modelConversations.model1?.messages[0]?.role).toBe(
 				"system",
 			);
-			expect(session.modelConversations.model1!.messages[1]!.role).toBe("user");
+			expect(session.modelConversations.model1?.messages[1]?.role).toBe("user");
 		});
 
 		it("should evict oldest session when at capacity", () => {
@@ -165,8 +165,8 @@ describe("InMemorySessionStore", () => {
 			// can push one beyond the limit. After truncation + user + assistant = maxMessages + 1
 			expect(messages?.length).toBeLessThanOrEqual(6);
 			// System message should be preserved
-			expect(messages![0]!.role).toBe("system");
-			expect(messages![0]!.content).toBe("System prompt");
+			expect(messages?.[0]?.role).toBe("system");
+			expect(messages?.[0]?.content).toBe("System prompt");
 		});
 	});
 
@@ -192,7 +192,7 @@ describe("InMemorySessionStore", () => {
 
 			expect(messages1).toHaveLength(3);
 			expect(messages2).toHaveLength(2);
-			expect(messages1![2]!.content).toBe("Response from model1");
+			expect(messages1?.[2]?.content).toBe("Response from model1");
 		});
 
 		it("should return false for non-existent model", () => {

@@ -258,8 +258,8 @@ describe("discuss-council tool", () => {
 				);
 
 				expect(result.results).toHaveLength(2);
-				expect(result.results[0]!.review).toBe("Success");
-				expect(result.results[1]!.error).toBe("Model failed");
+				expect(result.results[0]?.review).toBe("Success");
+				expect(result.results[1]?.error).toBe("Model failed");
 			});
 		});
 	});

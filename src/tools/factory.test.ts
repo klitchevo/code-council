@@ -233,7 +233,7 @@ describe("factory", () => {
 			];
 
 			// Use actual template path
-			const templatePath = getTemplatesDir() + "/tps-report.html";
+			const templatePath = `${getTemplatesDir()}/tps-report.html`;
 			const html = formatResultsAsHtml(results, templatePath, {
 				repoName: "test-repo",
 				analysis: { scores: { overall: 75 } },
@@ -270,7 +270,7 @@ describe("factory", () => {
 		it("should use default repo name when not provided", () => {
 			const results = [{ model: "model1", review: "Test" }];
 
-			const templatePath = getTemplatesDir() + "/tps-report.html";
+			const templatePath = `${getTemplatesDir()}/tps-report.html`;
 			const html = formatResultsAsHtml(results, templatePath);
 
 			expect(html).toContain("Unknown Repository");

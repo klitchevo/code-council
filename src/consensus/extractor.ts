@@ -32,6 +32,29 @@ function generateFindingId(): FindingId {
 }
 
 /**
+ * Attempt to repair common JSON issues from LLM output
+ */
+function repairJson(jsonStr: string): string {
+	let repaired = jsonStr;
+
+	// Remove trailing commas before } or ]
+	repaired = repaired.replace(/,(\s*[}\]])/g, "$1");
+
+	// Strip suggestedCode fields entirely - they cause too many JSON issues
+	// Match "suggestedCode": "..." or "suggestedCode": null
+	repaired = repaired.replace(
+		/"suggestedCode"\s*:\s*(?:"(?:[^"\\]|\\.)*"|null)\s*,?/g,
+		"",
+	);
+
+	// Clean up any double commas or trailing commas we may have created
+	repaired = repaired.replace(/,\s*,/g, ",");
+	repaired = repaired.replace(/,(\s*[}\]])/g, "$1");
+
+	return repaired;
+}
+
+/**
  * Parse the LLM extraction response into findings
  */
 export function parseExtractionResponse(
@@ -53,13 +76,16 @@ export function parseExtractionResponse(
 
 	jsonStr = jsonStr.trim();
 
+	// Try to repair common JSON issues
+	jsonStr = repairJson(jsonStr);
+
 	// Parse JSON
 	const raw = JSON.parse(jsonStr) as unknown;
 
 	// Validate with Zod
 	const parsed = ExtractionResponseSchema.parse(raw);
 
-	// Transform to Finding objects
+	// Transform to Finding objects (convert nulls to undefined)
 	const now = new Date().toISOString();
 	return parsed.findings.map(
 		(f): Finding => ({
@@ -72,15 +98,15 @@ export function parseExtractionResponse(
 			location: f.location
 				? {
 						file: f.location.file,
-						line: f.location.line,
-						endLine: f.location.endLine,
+						line: f.location.line ?? undefined,
+						endLine: f.location.endLine ?? undefined,
 					}
 				: undefined,
-			suggestion: f.suggestion,
-			suggestedCode: f.suggestedCode,
+			suggestion: f.suggestion ?? undefined,
+			suggestedCode: f.suggestedCode ?? undefined,
 			rawExcerpt: f.rawExcerpt,
 			extractedAt: now,
-			confidence: f.confidence,
+			confidence: f.confidence ?? undefined,
 		}),
 	);
 }
