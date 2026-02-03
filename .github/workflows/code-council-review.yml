@@ -67,11 +67,20 @@ jobs:
             fi
           fi
 
-      - name: Clean Previous Code Council Comments
+      - name: Clean Previous Code Council Reviews
         if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Dismiss any pending reviews from this bot to avoid "only one pending review" error
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+            --jq '.[] | select(.state == "PENDING") | .id' | \
+          while read REVIEW_ID; do
+            echo "Dismissing pending review $REVIEW_ID"
+            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/$REVIEW_ID \
+              --method DELETE 2>/dev/null || true
+          done
+
           # Delete previous Code Council review comments (identified by severity tags)
           gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments \
             --jq '.[] | select(.body | contains("Code Council") or contains("[CRITICAL]") or contains("[HIGH]") or contains("[MEDIUM]")) | .id' | \
@@ -79,7 +88,6 @@ jobs:
             gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments/$COMMENT_ID \
               --method DELETE 2>/dev/null || true
           done
-          # Note: Can't delete submitted reviews, only pending ones. Old reviews will remain but new one will be added.
 
       - name: Post Inline Review
         if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
