@@ -32,37 +32,29 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Code Council
+        run: npm install -g @klitchevo/code-council
+
       - name: Run Code Council Review
         id: review
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # Run review with pr-comments format for inline comments
-          npx @klitchevo/code-council review git \
-            --review-type diff \
-            --format pr-comments \
-            > review.json 2>&1 || {
-              # If pr-comments fails, fall back to markdown format
-              echo "pr-comments format failed, falling back to markdown"
-              npx @klitchevo/code-council review git \
-                --review-type diff \
-                --format markdown \
-                > review.md
-              echo "format=markdown" >> $GITHUB_OUTPUT
-              if [ -s review.md ]; then
-                echo "has_review=true" >> $GITHUB_OUTPUT
-              else
-                echo "has_review=false" >> $GITHUB_OUTPUT
-              fi
-              exit 0
-            }
-
-          # Check if review JSON has content
-          if [ -s review.json ] && [ "$(cat review.json | head -c 10)" != "Error" ]; then
-            echo "has_review=true" >> $GITHUB_OUTPUT
+          if code-council review git --review-type diff --format pr-comments > review.json 2>&1; then
             echo "format=pr-comments" >> $GITHUB_OUTPUT
+            echo "has_review=true" >> $GITHUB_OUTPUT
           else
-            echo "has_review=false" >> $GITHUB_OUTPUT
+            echo "pr-comments format failed, falling back to markdown"
+            cat review.json || true
+            if code-council review git --review-type diff --format markdown > review.md 2>&1; then
+              echo "format=markdown" >> $GITHUB_OUTPUT
+              echo "has_review=true" >> $GITHUB_OUTPUT
+            else
+              echo "Review failed"
+              cat review.md || true
+              echo "has_review=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Post Inline Review
