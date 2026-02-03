@@ -103,6 +103,8 @@ export interface Finding {
 	readonly description: string;
 	readonly location?: CodeLocation;
 	readonly suggestion?: string;
+	/** Actual code to replace the problematic code (for GitHub suggestion blocks) */
+	readonly suggestedCode?: string;
 	/** Original text from the review that this finding was extracted from */
 	readonly rawExcerpt: string;
 	/** ISO timestamp when the finding was extracted */

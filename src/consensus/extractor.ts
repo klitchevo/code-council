@@ -77,6 +77,7 @@ export function parseExtractionResponse(
 					}
 				: undefined,
 			suggestion: f.suggestion,
+			suggestedCode: f.suggestedCode,
 			rawExcerpt: f.rawExcerpt,
 			extractedAt: now,
 			confidence: f.confidence,

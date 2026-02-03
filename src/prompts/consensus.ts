@@ -59,6 +59,7 @@ You MUST respond with valid JSON matching this schema:
         "endLine": 45
       },
       "suggestion": "How to fix or improve",
+      "suggestedCode": "The actual corrected code that should replace the problematic code (if applicable)",
       "rawExcerpt": "The original text from the review that describes this finding",
       "confidence": 0.95
     }
@@ -90,6 +91,7 @@ ${Object.entries(SEVERITY_DESCRIPTIONS)
 5. **Set confidence**: Higher (0.8-1.0) for clear, explicit issues; lower (0.5-0.7) for inferred or ambiguous ones
 6. **Don't duplicate**: Each distinct issue should appear once
 7. **Handle empty reviews**: If no issues found, return {"findings": []}
+8. **Include code fixes**: When a fix involves specific code changes, provide the actual corrected code in the suggestedCode field (not explanation, just the code)
 
 ## Important
 

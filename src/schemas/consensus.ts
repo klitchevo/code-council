@@ -55,6 +55,7 @@ export const ExtractionResponseSchema = z.object({
 				})
 				.optional(),
 			suggestion: z.string().optional(),
+			suggestedCode: z.string().optional(),
 			rawExcerpt: z.string(),
 			confidence: z.number().min(0).max(1).optional(),
 		}),

@@ -112,8 +112,12 @@ function formatCommentBody(
 		lines.push("");
 	}
 
-	// Suggestion from first finding
-	if (firstFinding?.suggestion) {
+	// Suggestion from first finding - prefer suggestedCode for GitHub apply button
+	if (firstFinding?.suggestedCode) {
+		lines.push("```suggestion");
+		lines.push(firstFinding.suggestedCode);
+		lines.push("```");
+	} else if (firstFinding?.suggestion) {
 		lines.push(`**Suggestion:** ${firstFinding.suggestion}`);
 	}
 

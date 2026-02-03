@@ -45,7 +45,8 @@ jobs:
         run: |
           # Run review with pr-comments format for inline comments
           # Note: stdout goes to file, stderr shows logs in console
-          if code-council review git --review-type diff --format pr-comments > review.json; then
+          if code-council review git --review-type diff --format pr-comments \
+            --models "google/gemini-3-pro-preview,openai/gpt-5.2-codex,minimax/minimax-m2.1,z-ai/glm-4.7,moonshotai/kimi-k2.5,deepseek/deepseek-v3.2" > review.json; then
             echo "format=pr-comments" >> $GITHUB_OUTPUT
             echo "has_review=true" >> $GITHUB_OUTPUT
           else
@@ -60,6 +61,27 @@ jobs:
               echo "has_review=false" >> $GITHUB_OUTPUT
             fi
           fi
+
+      - name: Clean Previous Code Council Comments
+        if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Delete previous Code Council review comments (identified by severity tags)
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments \
+            --jq '.[] | select(.body | contains("Code Council") or contains("[CRITICAL]") or contains("[HIGH]") or contains("[MEDIUM]")) | .id' | \
+          while read COMMENT_ID; do
+            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments/$COMMENT_ID \
+              --method DELETE 2>/dev/null || true
+          done
+
+          # Also dismiss previous Code Council reviews
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+            --jq '.[] | select(.body | contains("Code Council Multi-Model Review")) | .id' | \
+          while read REVIEW_ID; do
+            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/$REVIEW_ID \
+              --method DELETE 2>/dev/null || true
+          done
 
       - name: Post Inline Review
         if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
