@@ -417,12 +417,16 @@ describe("ConsensusClient", () => {
 			await consensusClient.extractFindings(review);
 
 			expect(capturedChatFn).not.toBeNull();
+			const chatFn = capturedChatFn as unknown as (
+				s: string,
+				u: string,
+			) => Promise<string>;
 
 			// Call the captured chat function
 			(
 				mockReviewClient.chatMultiTurn as ReturnType<typeof vi.fn>
 			).mockResolvedValue("response");
-			await capturedChatFn?.("system prompt", "user message");
+			await chatFn("system prompt", "user message");
 
 			expect(mockReviewClient.chatMultiTurn).toHaveBeenCalledWith(
 				"anthropic/claude-3-haiku",
