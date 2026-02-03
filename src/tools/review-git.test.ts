@@ -101,8 +101,12 @@ describe("review-git tool", () => {
 			expect(result.reviewType).toBe("unstaged");
 		});
 
-		it("should review branch diff", async () => {
-			mockExecSync.mockReturnValue("branch diff content");
+		it("should review branch diff using main when available", async () => {
+			// First call: git rev-parse --verify main (succeeds)
+			// Second call: git diff main..HEAD
+			mockExecSync
+				.mockReturnValueOnce("abc123") // rev-parse succeeds
+				.mockReturnValueOnce("branch diff content"); // actual diff
 
 			const result = await handleGitReview(
 				mockClient as ReviewClient,
@@ -117,6 +121,60 @@ describe("review-git tool", () => {
 				maxBuffer: 10 * 1024 * 1024,
 			});
 			expect(result.reviewType).toBe("diff");
+		});
+
+		it("should review branch diff using origin/main when main not available", async () => {
+			// First call: git rev-parse --verify main (fails)
+			// Second call: git rev-parse --verify origin/main (succeeds)
+			// Third call: git diff origin/main..HEAD
+			mockExecSync
+				.mockImplementationOnce(() => {
+					throw new Error("not found");
+				}) // main fails
+				.mockReturnValueOnce("abc123") // origin/main succeeds
+				.mockReturnValueOnce("branch diff content"); // actual diff
+
+			const result = await handleGitReview(
+				mockClient as ReviewClient,
+				["model1"],
+				{
+					review_type: "diff",
+				},
+			);
+
+			expect(mockExecSync).toHaveBeenCalledWith("git diff origin/main..HEAD", {
+				encoding: "utf-8",
+				maxBuffer: 10 * 1024 * 1024,
+			});
+			expect(result.reviewType).toBe("diff");
+		});
+
+		it("should review branch diff using GITHUB_BASE_REF in CI", async () => {
+			const originalEnv = process.env.GITHUB_BASE_REF;
+			process.env.GITHUB_BASE_REF = "main";
+
+			mockExecSync.mockReturnValue("branch diff content");
+
+			const result = await handleGitReview(
+				mockClient as ReviewClient,
+				["model1"],
+				{
+					review_type: "diff",
+				},
+			);
+
+			expect(mockExecSync).toHaveBeenCalledWith("git diff origin/main..HEAD", {
+				encoding: "utf-8",
+				maxBuffer: 10 * 1024 * 1024,
+			});
+			expect(result.reviewType).toBe("diff");
+
+			// Restore env
+			if (originalEnv === undefined) {
+				delete process.env.GITHUB_BASE_REF;
+			} else {
+				process.env.GITHUB_BASE_REF = originalEnv;
+			}
 		});
 
 		it("should review specific commit", async () => {
