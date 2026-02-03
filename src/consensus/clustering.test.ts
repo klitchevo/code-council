@@ -195,21 +195,28 @@ describe("clusterFindings", () => {
 	});
 
 	it("sorts clusters by severity then confidence", () => {
+		// Use different categories and descriptions to ensure they don't cluster
 		const findings = [
 			createFinding({
 				sourceModel: "model1",
+				category: "bug",
 				severity: "low",
-				title: "Low severity",
+				title: "Minor typo in output",
+				description: "A small typo in the console output",
 			}),
 			createFinding({
 				sourceModel: "model1",
+				category: "performance",
 				severity: "critical",
-				title: "Critical severity",
+				title: "Memory leak in worker",
+				description: "Worker process leaks memory over time",
 			}),
 			createFinding({
 				sourceModel: "model1",
+				category: "maintainability",
 				severity: "medium",
-				title: "Medium severity",
+				title: "Complex nested conditionals",
+				description: "Code has deeply nested if statements",
 			}),
 		];
 

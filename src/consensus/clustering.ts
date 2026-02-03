@@ -208,10 +208,6 @@ export function findingSimilarity(
 		return 0.1;
 	}
 
-	// Different severities = reduced similarity (likely different issues)
-	const severityMatch = finding1.severity === finding2.severity;
-	const severityPenalty = severityMatch ? 0 : 0.15;
-
 	// Check location match
 	const locationMatch = locationsMatch(
 		finding1.location,
@@ -219,41 +215,44 @@ export function findingSimilarity(
 		config.lineProximity,
 	);
 
-	// Calculate text similarity
-	const titleSim = textSimilarity(finding1.title, finding2.title);
-	const descSim = textSimilarity(finding1.description, finding2.description);
-
-	// Weight components
-	let score = 0;
-
-	// Category match already checked
-	score += 0.25; // Base for same category
-
-	// Location scoring - same file is important even if lines differ
+	// Same file check - this is the most important signal
 	const sameFile =
 		finding1.location?.file &&
 		finding2.location?.file &&
 		finding1.location.file === finding2.location.file;
 
+	// Calculate text similarity
+	const titleSim = textSimilarity(finding1.title, finding2.title);
+	const descSim = textSimilarity(finding1.description, finding2.description);
+
+	// For security findings in the same file, be VERY aggressive about clustering
+	// Multiple models finding different security issues in the same file = same problem
+	if (finding1.category === "security" && sameFile) {
+		// High similarity just for being security issues in the same file
+		// Text similarity is a bonus
+		return Math.min(1, 0.6 + titleSim * 0.2 + descSim * 0.1);
+	}
+
+	// Weight components for non-security or different files
+	let score = 0;
+
+	// Category match already checked
+	score += 0.25; // Base for same category
+
+	// Location scoring
 	if (sameFile) {
 		if (locationMatch) {
-			// Same file and nearby line
 			score += 0.35;
 		} else {
-			// Same file but different lines - still somewhat similar
-			score += 0.2;
+			score += 0.25;
 		}
 	} else if (locationMatch) {
-		// Different files or no files but location matched somehow
 		score += 0.15;
 	}
 
 	// Text similarity
 	score += titleSim * 0.25;
 	score += descSim * 0.15;
-
-	// Apply severity penalty if severities differ
-	score -= severityPenalty;
 
 	return Math.min(1, Math.max(0, score));
 }
