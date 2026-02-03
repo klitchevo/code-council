@@ -29,6 +29,41 @@ export const gitReviewSchema = gitReviewSchemaObj.shape;
 type GitReviewInput = z.infer<typeof gitReviewSchemaObj>;
 
 /**
+ * Get the base ref for diff comparison
+ * In GitHub Actions PR context, uses GITHUB_BASE_REF
+ * Falls back to trying main, then origin/main
+ */
+function getBaseRef(): string {
+	// GitHub Actions sets GITHUB_BASE_REF for pull requests
+	const githubBaseRef = process.env.GITHUB_BASE_REF;
+	if (githubBaseRef) {
+		logger.debug("Using GITHUB_BASE_REF", { ref: githubBaseRef });
+		return `origin/${githubBaseRef}`;
+	}
+
+	// Try local main first
+	try {
+		execSync("git rev-parse --verify main", {
+			encoding: "utf-8",
+			stdio: "pipe",
+		});
+		return "main";
+	} catch {
+		// Try origin/main
+		try {
+			execSync("git rev-parse --verify origin/main", {
+				encoding: "utf-8",
+				stdio: "pipe",
+			});
+			return "origin/main";
+		} catch {
+			// Fall back to main and let it fail with a clear error
+			return "main";
+		}
+	}
+}
+
+/**
  * Get git diff output based on review type
  */
 function getGitDiff(
@@ -45,9 +80,11 @@ function getGitDiff(
 			case "unstaged":
 				command = "git diff";
 				break;
-			case "diff":
-				command = "git diff main..HEAD";
+			case "diff": {
+				const baseRef = getBaseRef();
+				command = `git diff ${baseRef}..HEAD`;
 				break;
+			}
 			case "commit":
 				if (!commitHash) {
 					throw new Error(
