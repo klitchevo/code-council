@@ -313,6 +313,196 @@ describe("pr-comment-formatter", () => {
 				"[Code Council](https://github.com/klitchevo/code-council)",
 			);
 		});
+
+		it("should filter out low confidence findings by default (minConfidence=0.5)", () => {
+			// Create a low confidence cluster (single model = 17% confidence)
+			const lowConfidenceCluster: FindingCluster = {
+				id: toClusterId("cluster-low"),
+				title: "Low Confidence Bug",
+				category: "bug",
+				severity: "high",
+				canonicalLocation: { file: "src/test.ts", line: 10 },
+				findings: [
+					{
+						id: toFindingId("finding-low"),
+						sourceModel: "model-a",
+						category: "bug",
+						severity: "high",
+						title: "Low Confidence Bug",
+						description: "Test description",
+						suggestion: "Test suggestion",
+						rawExcerpt: "raw",
+						extractedAt: new Date().toISOString(),
+					},
+				],
+				agreeingModels: ["model-a"], // Only 1 model = 17% confidence
+				silentModels: ["model-b", "model-c", "model-d", "model-e", "model-f"],
+				disagreingModels: [],
+				confidence: 0.17, // 1/6 models
+				consensusType: "single",
+			};
+
+			// Create a high confidence cluster
+			const highConfidenceCluster: FindingCluster = {
+				id: toClusterId("cluster-high"),
+				title: "High Confidence Bug",
+				category: "bug",
+				severity: "high",
+				canonicalLocation: { file: "src/test.ts", line: 20 },
+				findings: [
+					{
+						id: toFindingId("finding-high"),
+						sourceModel: "model-a",
+						category: "bug",
+						severity: "high",
+						title: "High Confidence Bug",
+						description: "Test description",
+						suggestion: "Test suggestion",
+						rawExcerpt: "raw",
+						extractedAt: new Date().toISOString(),
+					},
+				],
+				agreeingModels: ["model-a", "model-b", "model-c", "model-d"], // 4 models = 67% confidence
+				silentModels: ["model-e", "model-f"],
+				disagreingModels: [],
+				confidence: 0.67, // 4/6 models
+				consensusType: "majority",
+			};
+
+			const report = createReport(
+				[highConfidenceCluster],
+				[],
+				[lowConfidenceCluster],
+			);
+			const mappingResult: MappingResult = {
+				comments: [
+					createMappedComment(lowConfidenceCluster, "src/test.ts", 10),
+					createMappedComment(highConfidenceCluster, "src/test.ts", 20),
+				],
+				unmapped: [],
+			};
+
+			const result = formatPrComments(report, mappingResult);
+
+			// Only high confidence should be included
+			expect(result.comments).toHaveLength(1);
+			expect(result.comments[0]?.body).toContain("High Confidence Bug");
+		});
+
+		it("should include low confidence findings when minConfidence is 0", () => {
+			const lowConfidenceCluster: FindingCluster = {
+				id: toClusterId("cluster-low"),
+				title: "Low Confidence Bug",
+				category: "bug",
+				severity: "high",
+				canonicalLocation: { file: "src/test.ts", line: 10 },
+				findings: [
+					{
+						id: toFindingId("finding-low"),
+						sourceModel: "model-a",
+						category: "bug",
+						severity: "high",
+						title: "Low Confidence Bug",
+						description: "Test description",
+						suggestion: "Test suggestion",
+						rawExcerpt: "raw",
+						extractedAt: new Date().toISOString(),
+					},
+				],
+				agreeingModels: ["model-a"],
+				silentModels: ["model-b", "model-c"],
+				disagreingModels: [],
+				confidence: 0.17,
+				consensusType: "single",
+			};
+
+			const report = createReport([], [], [lowConfidenceCluster]);
+			const mappingResult: MappingResult = {
+				comments: [
+					createMappedComment(lowConfidenceCluster, "src/test.ts", 10),
+				],
+				unmapped: [],
+			};
+
+			const result = formatPrComments(report, mappingResult, {
+				minConfidence: 0,
+			});
+
+			expect(result.comments).toHaveLength(1);
+			expect(result.comments[0]?.body).toContain("Low Confidence Bug");
+		});
+
+		it("should allow custom minConfidence threshold", () => {
+			// Create clusters with different confidence levels
+			const cluster30: FindingCluster = {
+				id: toClusterId("cluster-30"),
+				title: "30% Confidence Bug",
+				category: "bug",
+				severity: "high",
+				canonicalLocation: { file: "src/test.ts", line: 10 },
+				findings: [
+					{
+						id: toFindingId("finding-30"),
+						sourceModel: "model-a",
+						category: "bug",
+						severity: "high",
+						title: "30% Confidence Bug",
+						description: "Test",
+						suggestion: "Test",
+						rawExcerpt: "raw",
+						extractedAt: new Date().toISOString(),
+					},
+				],
+				agreeingModels: ["model-a", "model-b"],
+				silentModels: ["model-c", "model-d", "model-e", "model-f"],
+				disagreingModels: [],
+				confidence: 0.3,
+				consensusType: "minority",
+			};
+
+			const cluster70: FindingCluster = {
+				id: toClusterId("cluster-70"),
+				title: "70% Confidence Bug",
+				category: "bug",
+				severity: "high",
+				canonicalLocation: { file: "src/test.ts", line: 20 },
+				findings: [
+					{
+						id: toFindingId("finding-70"),
+						sourceModel: "model-a",
+						category: "bug",
+						severity: "high",
+						title: "70% Confidence Bug",
+						description: "Test",
+						suggestion: "Test",
+						rawExcerpt: "raw",
+						extractedAt: new Date().toISOString(),
+					},
+				],
+				agreeingModels: ["model-a", "model-b", "model-c", "model-d"],
+				silentModels: ["model-e", "model-f"],
+				disagreingModels: [],
+				confidence: 0.7,
+				consensusType: "majority",
+			};
+
+			const report = createReport([cluster70], [cluster30]);
+			const mappingResult: MappingResult = {
+				comments: [
+					createMappedComment(cluster30, "src/test.ts", 10),
+					createMappedComment(cluster70, "src/test.ts", 20),
+				],
+				unmapped: [],
+			};
+
+			// With minConfidence=0.6, only cluster70 should pass
+			const result = formatPrComments(report, mappingResult, {
+				minConfidence: 0.6,
+			});
+
+			expect(result.comments).toHaveLength(1);
+			expect(result.comments[0]?.body).toContain("70% Confidence Bug");
+		});
 	});
 
 	describe("serializePrReview", () => {

@@ -38,12 +38,15 @@ export interface FormatOptions {
 	readonly includeLowSeverity?: boolean;
 	/** Add model agreement info to comments */
 	readonly showModelAgreement?: boolean;
+	/** Minimum confidence threshold for inline comments (0-1, default 0.5 = 50%) */
+	readonly minConfidence?: number;
 }
 
 const DEFAULT_OPTIONS: Required<FormatOptions> = {
 	maxComments: 30,
 	includeLowSeverity: false,
 	showModelAgreement: true,
+	minConfidence: 0.5,
 };
 
 /**
@@ -268,6 +271,13 @@ export function formatPrComments(
 	if (!opts.includeLowSeverity) {
 		commentsToInclude = commentsToInclude.filter(
 			(c) => c.cluster.severity !== "low" && c.cluster.severity !== "info",
+		);
+	}
+
+	// Filter by minimum confidence threshold
+	if (opts.minConfidence > 0) {
+		commentsToInclude = commentsToInclude.filter(
+			(c) => c.cluster.confidence >= opts.minConfidence,
 		);
 	}
 
