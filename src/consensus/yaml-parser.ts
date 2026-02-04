@@ -113,6 +113,20 @@ function removeLeadingPlusSymbols(text: string): string {
 }
 
 /**
+ * Extract YAML starting from "findings:" keyword
+ * Handles models that add explanatory text before the YAML
+ */
+function extractFromFindingsKeyword(text: string): string {
+	const stripped = stripMarkdownCodeBlocks(text);
+	const findingsIndex = stripped.indexOf("findings:");
+	if (findingsIndex === -1) {
+		return stripped;
+	}
+	// Take everything from "findings:" onwards
+	return stripped.slice(findingsIndex).trim();
+}
+
+/**
  * Replace tabs with spaces
  */
 function replaceTabsWithSpaces(text: string): string {
@@ -241,6 +255,17 @@ export function parseYamlWithFallbacks(
 						),
 					),
 			},
+			{
+				name: "extract-findings-keyword",
+				transform: extractFromFindingsKeyword,
+			},
+			{
+				name: "extract-findings-keyword+fixes",
+				transform: (t) =>
+					tryFixYamlIssues(
+						replaceTabsWithSpaces(extractFromFindingsKeyword(t)),
+					),
+			},
 		];
 
 	// Add marker-based extraction if keys provided
@@ -284,8 +309,15 @@ export function parseYamlWithFallbacks(
 
 	errors.push(`json-fallback: ${jsonResult.error}`);
 
-	// All strategies failed
+	// All strategies failed - log the raw input for debugging
 	const errorSummary = errors.slice(-3).join("; "); // Last 3 errors
+	const truncatedInput = text.length > 200 ? `${text.slice(0, 200)}...` : text;
+	logger.error("YAML/JSON parsing failed", {
+		inputLength: text.length,
+		inputPreview: truncatedInput,
+		strategiesTried: strategies.length + 1,
+		lastErrors: errors.slice(-3),
+	});
 	throw new Error(
 		`Failed to parse YAML/JSON after ${strategies.length + 1} attempts. Last errors: ${errorSummary}`,
 	);
