@@ -39,6 +39,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch base branch
+        run: git fetch origin \${{ github.base_ref }}:\${{ github.base_ref }} || true
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -50,63 +53,101 @@ jobs:
           OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # Run review with pr-comments format for inline comments
-          npx @klitchevo/code-council review git \\
-            --review-type diff \\
-            --format pr-comments \\
-            > review.json 2>&1 || {
-              # If pr-comments fails, fall back to markdown format
-              echo "pr-comments format failed, falling back to markdown"
-              npx @klitchevo/code-council review git \\
-                --review-type diff \\
-                --format markdown \\
-                > review.md
-              echo "format=markdown" >> $GITHUB_OUTPUT
-              if [ -s review.md ]; then
-                echo "has_review=true" >> $GITHUB_OUTPUT
-              else
-                echo "has_review=false" >> $GITHUB_OUTPUT
-              fi
-              exit 0
-            }
-
-          # Check if review JSON has content
-          if [ -s review.json ] && [ "$(cat review.json | head -c 10)" != "Error" ]; then
-            echo "has_review=true" >> $GITHUB_OUTPUT
+          if npx @klitchevo/code-council review git \\
+              --review-type diff \\
+              --format pr-comments > review.json; then
             echo "format=pr-comments" >> $GITHUB_OUTPUT
+            echo "has_review=true" >> $GITHUB_OUTPUT
           else
-            echo "has_review=false" >> $GITHUB_OUTPUT
+            echo "pr-comments format failed, falling back to markdown"
+            if npx @klitchevo/code-council review git \\
+                --review-type diff \\
+                --format markdown > review.md; then
+              echo "format=markdown" >> $GITHUB_OUTPUT
+              echo "has_review=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_review=false" >> $GITHUB_OUTPUT
+            fi
           fi
+
+      - name: Clean Previous Code Council Reviews
+        if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Dismiss pending reviews to avoid "only one pending review" error
+          gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews \\
+            --jq '.[] | select(.state == "PENDING") | .id' | \\
+          while read REVIEW_ID; do
+            gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews/$REVIEW_ID \\
+              --method DELETE 2>/dev/null || true
+          done
+
+          # Delete previous Code Council comments
+          gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/comments \\
+            --jq '.[] | select(.body | contains("[CRITICAL]") or contains("[HIGH]") or contains("[MEDIUM]")) | .id' | \\
+          while read COMMENT_ID; do
+            gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/comments/$COMMENT_ID \\
+              --method DELETE 2>/dev/null || true
+          done
 
       - name: Post Inline Review
         if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'pr-comments'
         env:
           GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Post PR review with inline comments
-          gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews \\
-            --method POST \\
-            --input review.json
+          # Validate JSON
+          if ! jq . review.json > /dev/null 2>&1; then
+            echo "Invalid JSON in review.json"
+            cat review.json
+            exit 1
+          fi
+
+          # Try batch review first
+          if gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews \\
+              --method POST \\
+              --input review.json 2>/dev/null; then
+            echo "Review posted successfully"
+          else
+            echo "Batch review failed, falling back to individual comments"
+
+            # Post summary as standalone review
+            SUMMARY_BODY=$(jq -r '.body' review.json)
+            gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews \\
+              --method POST \\
+              -f body="$SUMMARY_BODY" \\
+              -f event="COMMENT" || true
+
+            # Post individual inline comments
+            COMMENT_COUNT=$(jq '.comments | length' review.json)
+            for i in $(seq 0 $((COMMENT_COUNT - 1))); do
+              PATH_VAL=$(jq -r ".comments[$i].path" review.json)
+              LINE_VAL=$(jq -r ".comments[$i].line" review.json)
+              BODY_VAL=$(jq -r ".comments[$i].body" review.json)
+
+              gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/comments \\
+                --method POST \\
+                -f path="$PATH_VAL" \\
+                -F line="$LINE_VAL" \\
+                -f body="$BODY_VAL" \\
+                -f commit_id="\${{ github.event.pull_request.head.sha }}" 2>/dev/null || true
+            done
+          fi
 
       - name: Post Markdown Review (Fallback)
         if: steps.review.outputs.has_review == 'true' && steps.review.outputs.format == 'markdown'
         env:
           GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Read review content
           REVIEW_BODY=$(cat review.md)
-
-          # Add header and footer
-          FULL_REVIEW="## Code Council Multi-Model Review
+          gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews \\
+            --method POST \\
+            -f body="## Code Council Multi-Model Review
 
           $REVIEW_BODY
 
           ---
-          *Reviewed by [Code Council](https://github.com/klitchevo/code-council) using multiple AI models*"
-
-          # Post as a PR review (not just a comment)
-          gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews \\
-            --method POST \\
-            -f body="$FULL_REVIEW" \\
+          *Reviewed by [Code Council](https://github.com/klitchevo/code-council)*" \\
             -f event="COMMENT"
 `;
 
@@ -141,6 +182,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch base branch
+        run: git fetch origin \${{ github.base_ref }}:\${{ github.base_ref }} || true
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -168,7 +212,6 @@ jobs:
           GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
           REVIEW_BODY=$(cat review.md)
-
           gh api repos/\${{ github.repository }}/pulls/\${{ github.event.pull_request.number }}/reviews \\
             --method POST \\
             -f body="## Code Council Review
