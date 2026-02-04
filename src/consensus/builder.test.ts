@@ -123,8 +123,8 @@ describe("consensus/builder", () => {
 
 			const result = await buildConsensusReport(reviews, mockConsensusClient);
 
-			expect(result.report.thresholds.high).toBe(0.8);
-			expect(result.report.thresholds.moderate).toBe(0.5);
+			expect(result.report.thresholds.high).toBe(0.7);
+			expect(result.report.thresholds.moderate).toBe(0.33);
 		});
 
 		it("uses custom options when provided", async () => {

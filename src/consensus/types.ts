@@ -255,11 +255,11 @@ export interface ConsensusOptions {
 export const DEFAULT_CONSENSUS_CONFIG: ConsensusConfig = {
 	enabled: false,
 	modelWeights: {},
-	highConfidenceThreshold: 0.8,
-	moderateConfidenceThreshold: 0.5,
+	highConfidenceThreshold: 0.7, // 4+ models for high (was 0.8)
+	moderateConfidenceThreshold: 0.33, // 2+ models for moderate (was 0.5)
 	extractionModel: "anthropic/claude-3-haiku",
 	fallbackOnError: true,
 	lineProximity: 5,
-	similarityThreshold: 0.7,
+	similarityThreshold: 0.5, // Allow more clustering (was 0.7)
 	hostExtraction: true, // Recommended: let MCP host model do extraction
 };

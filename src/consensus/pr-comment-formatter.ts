@@ -46,7 +46,7 @@ const DEFAULT_OPTIONS: Required<FormatOptions> = {
 	maxComments: 30,
 	includeLowSeverity: false,
 	showModelAgreement: true,
-	minConfidence: 0.5,
+	minConfidence: 0.2, // Show findings with 2+ models agreeing (was 0.5)
 };
 
 /**
