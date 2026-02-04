@@ -50,6 +50,27 @@ const DEFAULT_OPTIONS: Required<FormatOptions> = {
 };
 
 /**
+ * GitHub's maximum character limit for comment/review bodies.
+ * Actual limit is ~65536, but we use 65000 for safety margin.
+ */
+const GITHUB_MAX_COMMENT_LENGTH = 65000;
+
+/**
+ * Truncate text to fit within GitHub's character limit.
+ * Adds ellipsis marker when truncation occurs.
+ */
+function truncateToLimit(
+	text: string,
+	limit: number = GITHUB_MAX_COMMENT_LENGTH,
+): string {
+	if (text.length <= limit) {
+		return text;
+	}
+	const truncationMarker = "\n\n... (truncated due to GitHub character limit)";
+	return text.slice(0, limit - truncationMarker.length) + truncationMarker;
+}
+
+/**
  * Format severity as a badge/label
  */
 function formatSeverity(severity: string): string {
@@ -296,20 +317,24 @@ export function formatPrComments(
 		commentsToInclude = commentsToInclude.slice(0, opts.maxComments);
 	}
 
-	// Format inline comments
+	// Format inline comments with length validation
 	const totalModels = report.participatingModels.length;
-	const comments: GitHubPrComment[] = commentsToInclude.map((mapped) => ({
-		path: mapped.path,
-		line: mapped.line,
-		body: formatCommentBody(
+	const comments: GitHubPrComment[] = commentsToInclude.map((mapped) => {
+		const rawBody = formatCommentBody(
 			mapped.cluster,
 			opts.showModelAgreement,
 			totalModels,
-		),
-	}));
+		);
+		return {
+			path: mapped.path,
+			line: mapped.line,
+			body: truncateToLimit(rawBody),
+		};
+	});
 
-	// Format summary body
-	const body = formatSummaryBody(report, mappingResult, comments.length);
+	// Format summary body with length validation
+	const rawBody = formatSummaryBody(report, mappingResult, comments.length);
+	const body = truncateToLimit(rawBody);
 
 	return {
 		body,

@@ -8,7 +8,7 @@
  */
 
 import { logger } from "../logger";
-import type { ParsedDiff } from "../utils/diff-parser";
+import type { DiffHunk, ParsedDiff } from "../utils/diff-parser";
 import { normalizePath } from "../utils/diff-parser";
 import type { FindingCluster } from "./types";
 
@@ -68,6 +68,23 @@ function findNearestChangedLine(
 }
 
 /**
+ * Check if a line number falls within a diff hunk boundary.
+ * A line is within a hunk if it's between newStart and newStart + newCount.
+ */
+function isWithinHunkBoundary(
+	hunks: readonly DiffHunk[],
+	lineNumber: number,
+): boolean {
+	for (const hunk of hunks) {
+		const hunkEnd = hunk.newStart + hunk.newCount - 1;
+		if (lineNumber >= hunk.newStart && lineNumber <= hunkEnd) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Get the first changed line in a file (for file-level comments)
  */
 function getFirstChangedLine(changedLines: ReadonlySet<number>): number {
@@ -85,13 +102,22 @@ function getFirstChangedLine(changedLines: ReadonlySet<number>): number {
 }
 
 /**
+ * Result of finding a matching diff file
+ */
+interface MatchingDiffFile {
+	readonly path: string;
+	readonly changedLines: ReadonlySet<number>;
+	readonly hunks: readonly DiffHunk[];
+}
+
+/**
  * Try to find the file in the diff that matches the finding's location.
  * Uses fuzzy path matching for robustness.
  */
 function findMatchingDiffFile(
 	diff: ParsedDiff,
 	filePath: string,
-): { path: string; changedLines: ReadonlySet<number> } | undefined {
+): MatchingDiffFile | undefined {
 	const normalizedTarget = normalizePath(filePath);
 
 	for (const file of diff.files) {
@@ -103,7 +129,11 @@ function findMatchingDiffFile(
 			normalizedNew === normalizedTarget ||
 			normalizedOld === normalizedTarget
 		) {
-			return { path: file.newPath, changedLines: file.changedLines };
+			return {
+				path: file.newPath,
+				changedLines: file.changedLines,
+				hunks: file.hunks,
+			};
 		}
 
 		// Try matching just the filename for fuzzy matching
@@ -116,7 +146,11 @@ function findMatchingDiffFile(
 				normalizedNew.endsWith(normalizedTarget) ||
 				normalizedTarget.endsWith(normalizedNew)
 			) {
-				return { path: file.newPath, changedLines: file.changedLines };
+				return {
+					path: file.newPath,
+					changedLines: file.changedLines,
+					hunks: file.hunks,
+				};
 			}
 		}
 	}
@@ -208,6 +242,19 @@ export function mapClustersToComments(
 				file,
 				mappedLine: targetLine,
 			});
+		}
+
+		// Validate hunk boundary - warn if line is not within a hunk
+		// This shouldn't happen if changedLines is populated correctly, but validates integrity
+		if (!isWithinHunkBoundary(matchingFile.hunks, targetLine)) {
+			logger.warn("Target line not within hunk boundary", {
+				file,
+				targetLine,
+				hunks: matchingFile.hunks.map(
+					(h) => `${h.newStart}-${h.newStart + h.newCount - 1}`,
+				),
+			});
+			// Still include the comment - GitHub will place it at the nearest valid position
 		}
 
 		// Valid mapping found

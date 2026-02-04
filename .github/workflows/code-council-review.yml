@@ -99,15 +99,55 @@ jobs:
           cat review.json
           echo ""
           echo "=== validating JSON ==="
-          if jq . review.json > /dev/null 2>&1; then
-            echo "JSON is valid"
-            # Post PR review with inline comments
-            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
-              --method POST \
-              --input review.json
-          else
+          if ! jq . review.json > /dev/null 2>&1; then
             echo "Invalid JSON in review.json"
             exit 1
+          fi
+
+          echo "JSON is valid"
+
+          # Try batch review first
+          if gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+              --method POST \
+              --input review.json 2>/dev/null; then
+            echo "Batch review posted successfully"
+          else
+            echo "Batch review failed, falling back to individual comments"
+
+            # Post summary body as a standalone review
+            SUMMARY_BODY=$(jq -r '.body' review.json)
+            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+              --method POST \
+              -f body="$SUMMARY_BODY" \
+              -f event="COMMENT" || echo "Failed to post summary review"
+
+            # Post individual inline comments
+            COMMENT_COUNT=$(jq '.comments | length' review.json)
+            echo "Posting $COMMENT_COUNT individual comments..."
+
+            SUCCESS_COUNT=0
+            FAIL_COUNT=0
+
+            for i in $(seq 0 $((COMMENT_COUNT - 1))); do
+              PATH_VAL=$(jq -r ".comments[$i].path" review.json)
+              LINE_VAL=$(jq -r ".comments[$i].line" review.json)
+              BODY_VAL=$(jq -r ".comments[$i].body" review.json)
+
+              # Use the single-comment endpoint
+              if gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments \
+                  --method POST \
+                  -f path="$PATH_VAL" \
+                  -F line="$LINE_VAL" \
+                  -f body="$BODY_VAL" \
+                  -f commit_id="${{ github.event.pull_request.head.sha }}" 2>/dev/null; then
+                SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+              else
+                FAIL_COUNT=$((FAIL_COUNT + 1))
+                echo "Failed to post comment on $PATH_VAL:$LINE_VAL"
+              fi
+            done
+
+            echo "Individual comments: $SUCCESS_COUNT succeeded, $FAIL_COUNT failed"
           fi
 
       - name: Post Markdown Review (Fallback)

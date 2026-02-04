@@ -13,6 +13,13 @@ import { toFindingId } from "./types";
 import { parseExtractionYaml } from "./yaml-parser";
 
 /**
+ * Minimum confidence threshold for keeping findings.
+ * Findings below this are filtered out (self-reflection scoring).
+ * Scale: 0-1 (0.3 = 30% confidence)
+ */
+const MIN_CONFIDENCE_THRESHOLD = 0.3;
+
+/**
  * Result of extracting findings from a single review
  */
 export interface ExtractionResult {
@@ -182,7 +189,25 @@ export async function extractFindings(
 			userMessage,
 		);
 
-		const findings = parseExtractionResponse(response, sourceModel);
+		const allFindings = parseExtractionResponse(response, sourceModel);
+
+		// Filter out low-confidence findings (self-reflection scoring)
+		const findings = allFindings.filter((f) => {
+			// If confidence not provided, keep the finding (assume valid)
+			if (f.confidence === undefined) {
+				return true;
+			}
+			return f.confidence >= MIN_CONFIDENCE_THRESHOLD;
+		});
+
+		const filteredCount = allFindings.length - findings.length;
+		if (filteredCount > 0) {
+			logger.debug("Filtered low-confidence findings", {
+				sourceModel,
+				filtered: filteredCount,
+				threshold: MIN_CONFIDENCE_THRESHOLD,
+			});
+		}
 
 		logger.debug("Extracted findings", {
 			sourceModel,
