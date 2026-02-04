@@ -1,6 +1,7 @@
 /**
  * Extracts structured findings from free-form model reviews.
  * Uses LLM to parse review text into Finding objects.
+ * Supports both YAML (preferred) and JSON output formats.
  */
 
 import { ConsensusExtractionError } from "../errors";
@@ -9,6 +10,7 @@ import * as consensusPrompts from "../prompts/consensus";
 import { ExtractionResponseSchema } from "../schemas/consensus";
 import type { Finding, FindingId } from "./types";
 import { toFindingId } from "./types";
+import { parseExtractionYaml } from "./yaml-parser";
 
 /**
  * Result of extracting findings from a single review
@@ -55,32 +57,44 @@ function repairJson(jsonStr: string): string {
 }
 
 /**
- * Parse the LLM extraction response into findings
+ * Parse the LLM extraction response into findings.
+ * Uses YAML-first parsing with progressive fallbacks, then JSON as final fallback.
  */
 export function parseExtractionResponse(
 	responseText: string,
 	sourceModel: string,
 ): Finding[] {
-	// Remove markdown code blocks if present
-	let jsonStr = responseText.trim();
+	// Try YAML parsing first (with all fallback strategies)
+	let raw: unknown;
+	try {
+		raw = parseExtractionYaml(responseText);
+		logger.debug("Parsed extraction response via YAML parser", { sourceModel });
+	} catch (yamlError) {
+		// YAML failed, try legacy JSON repair as last resort
+		logger.debug("YAML parsing failed, trying JSON repair", {
+			sourceModel,
+			error: yamlError instanceof Error ? yamlError.message : "Unknown",
+		});
 
-	if (jsonStr.startsWith("```json")) {
-		jsonStr = jsonStr.slice(7);
-	} else if (jsonStr.startsWith("```")) {
-		jsonStr = jsonStr.slice(3);
+		let jsonStr = responseText.trim();
+
+		// Strip markdown
+		if (jsonStr.startsWith("```json")) {
+			jsonStr = jsonStr.slice(7);
+		} else if (jsonStr.startsWith("```yaml")) {
+			jsonStr = jsonStr.slice(7);
+		} else if (jsonStr.startsWith("```")) {
+			jsonStr = jsonStr.slice(3);
+		}
+		if (jsonStr.endsWith("```")) {
+			jsonStr = jsonStr.slice(0, -3);
+		}
+		jsonStr = jsonStr.trim();
+
+		// Try JSON repair
+		jsonStr = repairJson(jsonStr);
+		raw = JSON.parse(jsonStr);
 	}
-
-	if (jsonStr.endsWith("```")) {
-		jsonStr = jsonStr.slice(0, -3);
-	}
-
-	jsonStr = jsonStr.trim();
-
-	// Try to repair common JSON issues
-	jsonStr = repairJson(jsonStr);
-
-	// Parse JSON
-	const raw = JSON.parse(jsonStr) as unknown;
 
 	// Validate with Zod
 	const parsed = ExtractionResponseSchema.parse(raw);
@@ -104,7 +118,7 @@ export function parseExtractionResponse(
 				: undefined,
 			suggestion: f.suggestion ?? undefined,
 			suggestedCode: f.suggestedCode ?? undefined,
-			rawExcerpt: f.rawExcerpt,
+			rawExcerpt: f.rawExcerpt ?? undefined,
 			extractedAt: now,
 			confidence: f.confidence ?? undefined,
 		}),

@@ -39,32 +39,38 @@ export const SEVERITY_DESCRIPTIONS: Record<FindingSeverity, string> = {
 };
 
 /**
- * System prompt for extracting findings from a model's review
+ * System prompt for extracting findings from a model's review.
+ * Uses YAML with block scalars to avoid JSON escape character issues.
  */
-export const EXTRACTION_SYSTEM_PROMPT = `You are a precise extraction system. Your task is to parse a code review and extract individual findings into a structured JSON format.
+export const EXTRACTION_SYSTEM_PROMPT = `You are a precise extraction system. Your task is to parse a code review and extract individual findings into a structured YAML format.
 
 ## Output Format
 
-You MUST respond with valid JSON matching this schema:
-{
-  "findings": [
-    {
-      "category": "security" | "performance" | "bug" | "maintainability" | "accessibility" | "architecture" | "style" | "documentation" | "testing" | "other",
-      "severity": "critical" | "high" | "medium" | "low" | "info",
-      "title": "Short, descriptive title",
-      "description": "Detailed explanation of the issue",
-      "location": {
-        "file": "path/to/file.ts",
-        "line": 42,
-        "endLine": 45
-      },
-      "suggestion": "How to fix or improve",
-      "suggestedCode": "The actual corrected code that should replace the problematic code (if applicable)",
-      "rawExcerpt": "The original text from the review that describes this finding",
-      "confidence": 0.95
-    }
-  ]
-}
+You MUST respond with valid YAML matching this schema. Use block scalars (|) for multi-line text to avoid escape issues:
+
+\`\`\`yaml
+findings:
+  - category: security
+    severity: high
+    title: |
+      Short, descriptive title
+    description: |
+      Detailed explanation of the issue.
+      Can span multiple lines.
+    location:
+      file: path/to/file.ts
+      line: 42
+      endLine: 45
+    suggestion: |
+      How to fix or improve
+    confidence: 0.95
+\`\`\`
+
+## Available Values
+
+**Categories**: security, performance, bug, maintainability, accessibility, architecture, style, documentation, testing, other
+
+**Severities**: critical, high, medium, low, info
 
 ## Category Definitions
 
@@ -81,24 +87,24 @@ ${Object.entries(SEVERITY_DESCRIPTIONS)
 ## Extraction Rules
 
 1. **Be thorough**: Extract ALL distinct issues mentioned in the review
-2. **Be precise**: Use exact quotes for rawExcerpt when possible
-3. **Infer location**: If file paths or line numbers are mentioned, include them
-4. **Normalize severity**: Map vague language to specific severity levels:
+2. **Infer location**: If file paths or line numbers are mentioned, include them
+3. **Normalize severity**: Map vague language to specific severity levels:
    - "critical", "severe", "urgent", "must fix" → critical
    - "important", "significant", "should fix" → high
    - "consider", "might want to", "could improve" → medium/low
    - "minor", "nitpick", "suggestion" → low/info
-5. **Set confidence**: Higher (0.8-1.0) for clear, explicit issues; lower (0.5-0.7) for inferred or ambiguous ones
-6. **Don't duplicate**: Each distinct issue should appear once
-7. **Handle empty reviews**: If no issues found, return {"findings": []}
-8. **Include code fixes**: When a fix involves specific code changes, provide the actual corrected code in the suggestedCode field (not explanation, just the code)
+4. **Set confidence**: Higher (0.8-1.0) for clear, explicit issues; lower (0.5-0.7) for inferred or ambiguous ones
+5. **Don't duplicate**: Each distinct issue should appear once
+6. **Handle empty reviews**: If no issues found, return \`findings: []\`
 
 ## Important
 
 - DO NOT add findings not present in the review
 - DO NOT interpret or expand on the reviewer's points
-- If the review is empty or only contains praise, return an empty findings array
-- Always respond with valid JSON - no markdown code blocks, no explanatory text`;
+- If the review is empty or only contains praise, return empty findings array
+- Always respond with valid YAML
+- Use block scalars (|) for any text that might contain special characters or multiple lines
+- The location.line field is important - always include it when mentioned in the review`;
 
 /**
  * Build the user message for finding extraction
@@ -113,7 +119,7 @@ export function buildExtractionUserMessage(
 ${reviewText}
 ---
 
-Respond with ONLY valid JSON. Do not include markdown code blocks or any other text.`;
+Respond with ONLY valid YAML. Use block scalars (|) for multi-line text. No markdown code blocks or explanatory text.`;
 }
 
 /**

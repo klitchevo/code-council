@@ -219,7 +219,7 @@ export function normalizeFinding(finding: Finding): Finding {
 		description: finding.description.trim(),
 		location: normalizeLocation(finding.location),
 		suggestion: finding.suggestion?.trim(),
-		rawExcerpt: finding.rawExcerpt.trim(),
+		rawExcerpt: finding.rawExcerpt?.trim(),
 		confidence:
 			finding.confidence !== undefined
 				? Math.max(0, Math.min(1, finding.confidence))

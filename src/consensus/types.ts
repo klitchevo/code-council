@@ -105,8 +105,8 @@ export interface Finding {
 	readonly suggestion?: string;
 	/** Actual code to replace the problematic code (for GitHub suggestion blocks) */
 	readonly suggestedCode?: string;
-	/** Original text from the review that this finding was extracted from */
-	readonly rawExcerpt: string;
+	/** Original text from the review that this finding was extracted from (optional) */
+	readonly rawExcerpt?: string;
 	/** ISO timestamp when the finding was extracted */
 	readonly extractedAt: string;
 	/** Confidence in the extraction accuracy (0-1) */
