@@ -302,13 +302,18 @@ export function formatPrComments(
 		);
 	}
 
-	// Sort by severity (critical first), then by line number
+	// Sort by confidence (highest first), then severity, then line number
 	const severityOrder = ["critical", "high", "medium", "low", "info"];
 	commentsToInclude.sort((a, b) => {
+		// Primary: confidence (descending)
+		const confidenceDiff = b.cluster.confidence - a.cluster.confidence;
+		if (Math.abs(confidenceDiff) > 0.01) return confidenceDiff;
+		// Secondary: severity (critical first)
 		const severityDiff =
 			severityOrder.indexOf(a.cluster.severity) -
 			severityOrder.indexOf(b.cluster.severity);
 		if (severityDiff !== 0) return severityDiff;
+		// Tertiary: line number
 		return a.line - b.line;
 	});
 
