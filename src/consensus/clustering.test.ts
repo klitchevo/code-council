@@ -229,6 +229,69 @@ describe("clusterFindings", () => {
 	});
 });
 
+describe("getClusterKey determinism", () => {
+	it("clusters findings with same issue type regardless of keyword order in text", () => {
+		// These findings describe the same issue (SQL injection) but with different wording
+		// The fix ensures they get the same cluster key by sorting issue types alphabetically
+		const findings = [
+			createFinding({
+				sourceModel: "model1",
+				category: "security",
+				title: "SQL Injection via query parameter",
+				description: "User input is passed to SQL query without sanitization",
+				location: { file: "src/db.ts", line: 50 },
+			}),
+			createFinding({
+				sourceModel: "model2",
+				category: "security",
+				title: "Unsafe database query",
+				description:
+					"CWE-89: SQL injection vulnerability in query construction",
+				location: { file: "src/db.ts", line: 52 },
+			}),
+			createFinding({
+				sourceModel: "model3",
+				category: "security",
+				title: "Database query injection",
+				description: "Unparameterized SQL allows injection attacks",
+				location: { file: "src/db.ts", line: 50 },
+			}),
+		];
+
+		const clusters = clusterFindings(findings, ["model1", "model2", "model3"]);
+
+		// All findings should end up in the same cluster
+		expect(clusters).toHaveLength(1);
+		expect(clusters[0]?.agreeingModels).toHaveLength(3);
+		expect(clusters[0]?.consensusType).toBe("unanimous");
+	});
+
+	it("clusters XSS findings with different wording together", () => {
+		// Test another common issue type with different keyword orderings
+		const findings = [
+			createFinding({
+				sourceModel: "model1",
+				category: "security",
+				title: "XSS vulnerability in output",
+				description: "User input rendered without sanitization",
+				location: { file: "src/render.ts", line: 20 },
+			}),
+			createFinding({
+				sourceModel: "model2",
+				category: "security",
+				title: "Cross-site scripting risk",
+				description: "Unsanitized HTML output allows XSS",
+				location: { file: "src/render.ts", line: 22 },
+			}),
+		];
+
+		const clusters = clusterFindings(findings, ["model1", "model2"]);
+
+		expect(clusters).toHaveLength(1);
+		expect(clusters[0]?.agreeingModels).toHaveLength(2);
+	});
+});
+
 describe("groupByConfidence", () => {
 	// Helper to create a cluster
 	function createCluster(confidence: number): FindingCluster {

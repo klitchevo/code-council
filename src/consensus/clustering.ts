@@ -304,7 +304,7 @@ function getClusterKey(finding: Finding): string {
 	const file = finding.location?.file ?? "no-file";
 	const category = finding.category;
 	const types = extractIssueTypes(`${finding.title} ${finding.description}`);
-	const primaryType = types.size > 0 ? [...types][0] : "general";
+	const primaryType = types.size > 0 ? [...types].sort()[0] : "general";
 	return `${file}::${category}::${primaryType}`;
 }
 

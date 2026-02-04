@@ -77,7 +77,7 @@ const lineNumberSchema = z
 		}
 		return val;
 	})
-	.pipe(z.number().int().positive().optional())
+	.pipe(z.number().int().nonnegative().optional())
 	.nullish();
 
 export const ExtractionResponseSchema = z.object({
