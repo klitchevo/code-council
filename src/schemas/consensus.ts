@@ -49,11 +49,20 @@ const severitySchema = z
 	.pipe(z.enum(FINDING_SEVERITIES));
 
 /**
- * Transform category to lowercase and validate
+ * Transform category to lowercase and map unknown values to "other"
  */
 const categorySchema = z
 	.string()
 	.transform((val) => val.toLowerCase())
+	.transform((val) => {
+		// Map unknown categories to "other" instead of failing
+		if (
+			!FINDING_CATEGORIES.includes(val as (typeof FINDING_CATEGORIES)[number])
+		) {
+			return "other";
+		}
+		return val as (typeof FINDING_CATEGORIES)[number];
+	})
 	.pipe(z.enum(FINDING_CATEGORIES));
 
 /**

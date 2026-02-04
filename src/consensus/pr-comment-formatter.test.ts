@@ -104,8 +104,9 @@ describe("pr-comment-formatter", () => {
 			expect(result.comments[0]?.line).toBe(10);
 			expect(result.comments[0]?.body).toContain("[MEDIUM] Test Bug");
 			expect(result.comments[0]?.body).toContain("Bug");
-			expect(result.comments[0]?.body).toContain("2/3 models");
-			expect(result.comments[0]?.body).toContain("Confidence: 80%");
+			expect(result.comments[0]?.body).toContain("Found by:");
+			expect(result.comments[0]?.body).toContain("(2/3)");
+			expect(result.comments[0]?.body).toContain("80% confidence");
 			expect(result.body).toContain("Code Council Multi-Model Review");
 		});
 

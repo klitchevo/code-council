@@ -71,7 +71,19 @@ function formatCategory(category: string): string {
 }
 
 /**
- * Format model agreement as a string
+ * Extract model name from full path (strips provider prefix)
+ * e.g., "google/gemini-3-pro-preview" → "gemini-3-pro-preview"
+ */
+function formatModelName(fullName: string): string {
+	const slashIndex = fullName.indexOf("/");
+	if (slashIndex !== -1) {
+		return fullName.slice(slashIndex + 1);
+	}
+	return fullName;
+}
+
+/**
+ * Format model agreement as a string with model names
  */
 function formatModelAgreement(
 	cluster: FindingCluster,
@@ -79,8 +91,9 @@ function formatModelAgreement(
 ): string {
 	const agreeing = cluster.agreeingModels.length;
 	const confidence = Math.round(cluster.confidence * 100);
+	const modelNames = cluster.agreeingModels.map(formatModelName).join(", ");
 
-	return `${agreeing}/${totalModels} models | Confidence: ${confidence}%`;
+	return `Found by: ${modelNames} (${agreeing}/${totalModels}) | ${confidence}% confidence`;
 }
 
 /**
@@ -178,7 +191,10 @@ function formatSummaryBody(
 		report.moderateConfidence.length +
 		report.lowConfidence.length;
 
-	lines.push(`**${report.participatingModels.length} models** participated`);
+	const modelNames = report.participatingModels.map(formatModelName).join(", ");
+	lines.push(
+		`**${report.participatingModels.length} models** participated: ${modelNames}`,
+	);
 	lines.push(`**${totalFindings} findings** total`);
 	lines.push(`**${inlineCommentCount} inline comments** on changed lines`);
 	lines.push(
