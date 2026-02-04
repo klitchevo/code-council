@@ -298,27 +298,26 @@ function shouldJoinCluster(
 }
 
 /**
- * Group key for pre-clustering: file + category + issue type
+ * Group key for pre-clustering: file + category only
+ * Issue type matching is handled by findingSimilarity() during sub-clustering
  */
 function getClusterKey(finding: Finding): string {
 	const file = finding.location?.file ?? "no-file";
 	const category = finding.category;
-	const types = extractIssueTypes(`${finding.title} ${finding.description}`);
-	const primaryType = types.size > 0 ? [...types].sort()[0] : "general";
-	return `${file}::${category}::${primaryType}`;
+	return `${file}::${category}`;
 }
 
 /**
  * Initial clustering by location and category
  * Uses a two-phase approach:
- * 1. First group by file+category+issue-type for coarse clustering
- * 2. Then refine with similarity matching
+ * 1. First group by file+category for coarse clustering
+ * 2. Then refine with similarity matching (handles issue type matching)
  */
 function initialClustering(
 	findings: Finding[],
 	config: ClusteringConfig,
 ): Finding[][] {
-	// Phase 1: Group by file + category + issue type
+	// Phase 1: Group by file + category
 	const preGroups = new Map<string, Finding[]>();
 	for (const finding of findings) {
 		const key = getClusterKey(finding);

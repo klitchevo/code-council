@@ -229,10 +229,10 @@ describe("clusterFindings", () => {
 	});
 });
 
-describe("getClusterKey determinism", () => {
-	it("clusters findings with same issue type regardless of keyword order in text", () => {
+describe("clustering by file and category", () => {
+	it("clusters findings in same file+category regardless of issue type wording", () => {
 		// These findings describe the same issue (SQL injection) but with different wording
-		// The fix ensures they get the same cluster key by sorting issue types alphabetically
+		// Pre-clustering uses file+category only; similarity matching handles issue type
 		const findings = [
 			createFinding({
 				sourceModel: "model1",
