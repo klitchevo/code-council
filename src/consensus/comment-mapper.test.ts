@@ -66,14 +66,14 @@ diff --git a/src/bar.ts b/src/bar.ts
 			expect(result.unmapped).toHaveLength(0);
 		});
 
-		it("should map cluster with line near changed lines (within tolerance)", () => {
-			const clusters = [createCluster("1", "src/foo.ts", 1)]; // Line 1 is near line 2 which is changed
+		it("should map cluster with line not in changed lines to nearest changed line", () => {
+			const clusters = [createCluster("1", "src/foo.ts", 1)]; // Line 1 not changed, but line 2 is
 
 			const result = mapClustersToComments(clusters, sampleDiff);
 
-			// Now maps to nearest changed line (line 2)
+			// With fuzzy matching, it should map to nearest changed line (line 2)
 			expect(result.comments).toHaveLength(1);
-			expect(result.comments[0]?.line).toBe(2);
+			expect(result.comments[0]?.line).toBe(2); // Mapped to nearest changed line
 			expect(result.unmapped).toHaveLength(0);
 		});
 
@@ -100,16 +100,16 @@ diff --git a/src/bar.ts b/src/bar.ts
 
 			const result = mapClustersToComments(clusters, sampleDiff);
 
-			// Now maps to first changed line in the file (line 2)
+			// With fuzzy matching, file-level comments go to first changed line
 			expect(result.comments).toHaveLength(1);
-			expect(result.comments[0]?.line).toBe(2);
+			expect(result.comments[0]?.line).toBe(2); // First changed line in foo.ts
 			expect(result.unmapped).toHaveLength(0);
 		});
 
 		it("should handle multiple clusters with mixed mappability", () => {
 			const clusters = [
 				createCluster("1", "src/foo.ts", 2), // Valid - changed line
-				createCluster("2", "src/foo.ts", 1), // Valid - near changed line (maps to line 2)
+				createCluster("2", "src/foo.ts", 1), // Maps to nearest changed line (fuzzy)
 				createCluster("3", "src/bar.ts", 8), // Valid - changed line
 				createCluster("4", "src/baz.ts", 5), // Invalid - file not in diff
 				createCluster("5", undefined, undefined), // Invalid - no location
@@ -117,12 +117,12 @@ diff --git a/src/bar.ts b/src/bar.ts
 
 			const result = mapClustersToComments(clusters, sampleDiff);
 
-			// cluster-1, cluster-2, cluster-3 all get mapped (cluster-2 maps to nearest changed line)
+			// Cluster 2 now maps to nearest changed line (line 2) thanks to fuzzy matching
 			expect(result.comments).toHaveLength(3);
 			expect(result.comments[0]?.cluster.id).toBe("cluster-1");
 			expect(result.comments[1]?.cluster.id).toBe("cluster-2");
 			expect(result.comments[2]?.cluster.id).toBe("cluster-3");
-			expect(result.unmapped).toHaveLength(2);
+			expect(result.unmapped).toHaveLength(2); // Only baz.ts and no-location
 		});
 
 		it("should handle normalized path with ./ prefix", () => {
@@ -172,12 +172,13 @@ diff --git a/src/bar.ts b/src/bar.ts
 	describe("countUnmappedFindings", () => {
 		it("should return count of unmapped findings", () => {
 			const clusters = [
-				createCluster("1", "src/foo.ts", 100), // Line too far from changed lines (line 2-3)
-				createCluster("2", "src/baz.ts", 5), // File not in diff
+				createCluster("1", "src/foo.ts", 1), // Maps to nearest changed line (fuzzy)
+				createCluster("2", "src/baz.ts", 5), // File not in diff - unmapped
 			];
 			const result = mapClustersToComments(clusters, sampleDiff);
 
-			expect(countUnmappedFindings(result)).toBe(2);
+			// Only 1 unmapped - foo.ts cluster maps to nearest changed line
+			expect(countUnmappedFindings(result)).toBe(1);
 		});
 	});
 

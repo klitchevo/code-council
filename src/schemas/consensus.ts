@@ -32,7 +32,7 @@ export const FindingSchema = z.object({
 	description: z.string().min(1, "Description cannot be empty"),
 	location: CodeLocationSchema.optional(),
 	suggestion: z.string().optional(),
-	rawExcerpt: z.string(),
+	rawExcerpt: z.string().optional(), // Made optional - not all extractions include this
 	extractedAt: z.string().datetime(),
 	confidence: z.number().min(0).max(1).optional(),
 });
@@ -72,8 +72,7 @@ export const ExtractionResponseSchema = z.object({
 				.nullish(),
 			suggestion: z.string().nullish(),
 			suggestedCode: z.string().nullish(),
-			// Make rawExcerpt optional - extraction model sometimes omits it
-			rawExcerpt: z.string().optional().default(""),
+			rawExcerpt: z.string().nullish(), // Made optional - not all extractions include this
 			confidence: z.number().min(0).max(1).nullish(),
 		}),
 	),
