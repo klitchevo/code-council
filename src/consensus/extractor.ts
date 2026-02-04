@@ -120,7 +120,7 @@ export function parseExtractionResponse(
 			severity: f.severity,
 			title: f.title,
 			description: f.description,
-			location: f.location
+			location: f.location?.file
 				? {
 						file: f.location.file,
 						line: f.location.line ?? undefined,

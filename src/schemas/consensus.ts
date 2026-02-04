@@ -89,7 +89,7 @@ export const ExtractionResponseSchema = z.object({
 			description: z.string(),
 			location: z
 				.object({
-					file: z.string(),
+					file: z.string().nullish(), // Allow null - some models return null for general findings
 					line: lineNumberSchema,
 					endLine: lineNumberSchema,
 				})

@@ -127,6 +127,48 @@ function extractFromFindingsKeyword(text: string): string {
 }
 
 /**
+ * Fix duplicate keys by keeping only the first occurrence
+ * Some models output invalid YAML like:
+ *   location:
+ *     file: foo.ts
+ *     file: bar.ts  <- duplicate key
+ */
+function removeDuplicateKeys(text: string): string {
+	const lines = text.split("\n");
+	const result: string[] = [];
+	const seenKeys = new Map<number, Set<string>>(); // indent level -> seen keys
+
+	for (const line of lines) {
+		const match = line.match(/^(\s*)(\w+):/);
+		if (match) {
+			const indent = match[1]?.length ?? 0;
+			const key = match[2] ?? "";
+
+			// Clear keys at higher indent levels (we've moved back)
+			for (const [level] of seenKeys) {
+				if (level > indent) {
+					seenKeys.delete(level);
+				}
+			}
+
+			// Check if this key was already seen at this indent level
+			const keysAtLevel = seenKeys.get(indent) ?? new Set();
+			if (keysAtLevel.has(key)) {
+				// Skip duplicate key
+				continue;
+			}
+
+			keysAtLevel.add(key);
+			seenKeys.set(indent, keysAtLevel);
+		}
+
+		result.push(line);
+	}
+
+	return result.join("\n");
+}
+
+/**
  * Replace tabs with spaces
  */
 function replaceTabsWithSpaces(text: string): string {
@@ -264,6 +306,19 @@ export function parseYamlWithFallbacks(
 				transform: (t) =>
 					tryFixYamlIssues(
 						replaceTabsWithSpaces(extractFromFindingsKeyword(t)),
+					),
+			},
+			{
+				name: "remove-duplicate-keys",
+				transform: (t) => removeDuplicateKeys(stripMarkdownCodeBlocks(t)),
+			},
+			{
+				name: "remove-duplicate-keys+all-fixes",
+				transform: (t) =>
+					tryFixYamlIssues(
+						replaceTabsWithSpaces(
+							removeDuplicateKeys(extractFromFindingsKeyword(t)),
+						),
 					),
 			},
 		];
