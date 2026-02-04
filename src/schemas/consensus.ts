@@ -56,6 +56,21 @@ const categorySchema = z
 	.transform((val) => val.toLowerCase())
 	.pipe(z.enum(FINDING_CATEGORIES));
 
+/**
+ * Coerce string line numbers to integers (some models output "42" instead of 42)
+ */
+const lineNumberSchema = z
+	.union([z.number(), z.string()])
+	.transform((val) => {
+		if (typeof val === "string") {
+			const parsed = Number.parseInt(val, 10);
+			return Number.isNaN(parsed) ? undefined : parsed;
+		}
+		return val;
+	})
+	.pipe(z.number().int().positive().optional())
+	.nullish();
+
 export const ExtractionResponseSchema = z.object({
 	findings: z.array(
 		z.object({
@@ -66,13 +81,13 @@ export const ExtractionResponseSchema = z.object({
 			location: z
 				.object({
 					file: z.string(),
-					line: z.number().nullish(),
-					endLine: z.number().nullish(),
+					line: lineNumberSchema,
+					endLine: lineNumberSchema,
 				})
 				.nullish(),
 			suggestion: z.string().nullish(),
 			suggestedCode: z.string().nullish(),
-			rawExcerpt: z.string().nullish(), // Made optional - not all extractions include this
+			rawExcerpt: z.string().nullish(),
 			confidence: z.number().min(0).max(1).nullish(),
 		}),
 	),

@@ -46,7 +46,7 @@ export const EXTRACTION_SYSTEM_PROMPT = `You are a precise extraction system. Yo
 
 ## Output Format
 
-You MUST respond with valid YAML matching this schema. Use block scalars (|) for multi-line text to avoid escape issues:
+You MUST respond with valid YAML matching this schema. Use block scalars (|) for multi-line text:
 
 \`\`\`yaml
 findings:
@@ -56,15 +56,36 @@ findings:
       Short, descriptive title
     description: |
       Detailed explanation of the issue.
-      Can span multiple lines.
     location:
       file: path/to/file.ts
       line: 42
       endLine: 45
     suggestion: |
-      How to fix or improve
+      How to fix (text explanation)
+    suggestedCode: |
+      // The actual fixed code that should replace the buggy code
+      const sanitized = escapeHtml(userInput);
+      return sanitized;
     confidence: 0.95
 \`\`\`
+
+## CRITICAL: suggestedCode Field
+
+The \`suggestedCode\` field is ESSENTIAL for GitHub's "Apply suggestion" feature. When the review mentions a code fix:
+
+1. **Extract the actual code** that should replace the buggy code
+2. Put it in \`suggestedCode\` as a block scalar (|)
+3. This becomes a clickable "Apply suggestion" button on GitHub
+
+Example - if reviewer says "change \`exec(userInput)\` to \`execFile('ls', [userInput])\`":
+\`\`\`yaml
+suggestedCode: |
+  execFile('ls', [userInput], (error, stdout) => {
+    console.log(stdout);
+  });
+\`\`\`
+
+If no specific code fix is mentioned, omit \`suggestedCode\` entirely.
 
 ## Available Values
 
@@ -88,14 +109,15 @@ ${Object.entries(SEVERITY_DESCRIPTIONS)
 
 1. **Be thorough**: Extract ALL distinct issues mentioned in the review
 2. **Infer location**: If file paths or line numbers are mentioned, include them
-3. **Normalize severity**: Map vague language to specific severity levels:
+3. **Extract code fixes**: If the reviewer suggests specific code changes, put them in \`suggestedCode\`
+4. **Normalize severity**: Map vague language to specific severity levels:
    - "critical", "severe", "urgent", "must fix" → critical
    - "important", "significant", "should fix" → high
    - "consider", "might want to", "could improve" → medium/low
    - "minor", "nitpick", "suggestion" → low/info
-4. **Set confidence**: Higher (0.8-1.0) for clear, explicit issues; lower (0.5-0.7) for inferred or ambiguous ones
-5. **Don't duplicate**: Each distinct issue should appear once
-6. **Handle empty reviews**: If no issues found, return \`findings: []\`
+5. **Set confidence**: Higher (0.8-1.0) for clear, explicit issues; lower (0.5-0.7) for inferred or ambiguous ones
+6. **Don't duplicate**: Each distinct issue should appear once
+7. **Handle empty reviews**: If no issues found, return \`findings: []\`
 
 ## Important
 
@@ -103,8 +125,9 @@ ${Object.entries(SEVERITY_DESCRIPTIONS)
 - DO NOT interpret or expand on the reviewer's points
 - If the review is empty or only contains praise, return empty findings array
 - Always respond with valid YAML
-- Use block scalars (|) for any text that might contain special characters or multiple lines
-- The location.line field is important - always include it when mentioned in the review`;
+- Use block scalars (|) for any text that might contain special characters
+- The location.line field is important - always include it when mentioned in the review
+- The suggestedCode field enables GitHub's "Apply suggestion" button - ALWAYS include it when a code fix is provided`;
 
 /**
  * Build the user message for finding extraction
