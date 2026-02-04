@@ -139,12 +139,14 @@ describe("normalizeLocation", () => {
 		expect(result?.line).toBe(42);
 	});
 
-	it("removes invalid line numbers", () => {
+	it("preserves line 0 (valid 0-indexed line)", () => {
 		const result = normalizeLocation({ file: "src/api/users.ts", line: 0 });
-		expect(result?.line).toBeUndefined();
+		expect(result?.line).toBe(0);
+	});
 
-		const result2 = normalizeLocation({ file: "src/api/users.ts", line: -1 });
-		expect(result2?.line).toBeUndefined();
+	it("removes negative line numbers", () => {
+		const result = normalizeLocation({ file: "src/api/users.ts", line: -1 });
+		expect(result?.line).toBeUndefined();
 	});
 
 	it("swaps line and endLine if reversed", () => {
@@ -157,11 +159,21 @@ describe("normalizeLocation", () => {
 		expect(result?.endLine).toBe(50);
 	});
 
-	it("removes invalid endLine", () => {
+	it("preserves endLine 0 (valid 0-indexed line)", () => {
+		const result = normalizeLocation({
+			file: "src/api/users.ts",
+			line: 0,
+			endLine: 0,
+		});
+		expect(result?.line).toBe(0);
+		expect(result?.endLine).toBe(0);
+	});
+
+	it("removes negative endLine", () => {
 		const result = normalizeLocation({
 			file: "src/api/users.ts",
 			line: 40,
-			endLine: 0,
+			endLine: -1,
 		});
 		expect(result?.line).toBe(40);
 		expect(result?.endLine).toBeUndefined();

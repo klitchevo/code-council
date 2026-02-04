@@ -178,12 +178,12 @@ export function normalizeLocation(
 	let line = location.line;
 	let endLine = location.endLine;
 
-	if (line !== undefined && line < 1) {
+	if (line !== undefined && line < 0) {
 		line = undefined;
 	}
 
 	if (endLine !== undefined) {
-		if (endLine < 1) {
+		if (endLine < 0) {
 			endLine = undefined;
 		} else if (line !== undefined && endLine < line) {
 			// Swap if end is before start
