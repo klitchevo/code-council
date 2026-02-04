@@ -183,19 +183,28 @@ function tryFixYamlIssues(text: string): string {
 
 	// Fix unquoted strings that look like they should be quoted
 	// e.g., key: some value with: colons
+	// But skip YAML array items (values starting with -) and block scalars
 	result = result.replace(
 		/^(\s*)(\w+):\s+([^|\n]*:[^\n]*)$/gm,
 		(_, indent, key, value) => {
-			// If the value contains a colon and isn't already quoted, quote it
+			const trimmedValue = value.trim();
+			// Don't quote if:
+			// - Already quoted
+			// - Is a block scalar indicator
+			// - Starts with - (YAML array/multiline indicator)
+			// - Is a known YAML special value
 			if (
-				!value.trim().startsWith('"') &&
-				!value.trim().startsWith("'") &&
-				!value.trim().startsWith("|") &&
-				!value.trim().startsWith(">")
+				trimmedValue.startsWith('"') ||
+				trimmedValue.startsWith("'") ||
+				trimmedValue.startsWith("|") ||
+				trimmedValue.startsWith(">") ||
+				trimmedValue.startsWith("-") ||
+				trimmedValue.startsWith("[") ||
+				trimmedValue.startsWith("{")
 			) {
-				return `${indent}${key}: "${value.trim().replace(/"/g, '\\"')}"`;
+				return `${indent}${key}: ${value}`;
 			}
-			return `${indent}${key}: ${value}`;
+			return `${indent}${key}: "${trimmedValue.replace(/"/g, '\\"')}"`;
 		},
 	);
 
@@ -233,18 +242,6 @@ function attemptJsonParse(text: string): ParseAttemptResult {
 
 /**
  * Parse YAML with progressive fallback strategies.
- *
- * Tries 9 strategies in order:
- * 1. Strip markdown code blocks
- * 2. Add block scalar indicators
- * 3. Convert | to |2 for indent issues
- * 4. Extract YAML from markdown by markers
- * 5. Remove curly brackets
- * 6. Extract by first_key/last_key markers
- * 7. Remove leading + symbols
- * 8. Replace tabs with spaces
- * 9. Fix common YAML issues
- *
  * Falls back to JSON parsing if all YAML strategies fail.
  *
  * @param text - The raw text to parse
@@ -274,6 +271,17 @@ export function parseYamlWithFallbacks(
 			{
 				name: "remove-duplicate-keys",
 				transform: (t) => removeDuplicateKeys(stripMarkdownCodeBlocks(t)),
+			},
+			{
+				name: "extract-findings+dedup",
+				transform: (t) => removeDuplicateKeys(extractFromFindingsKeyword(t)),
+			},
+			{
+				name: "extract-findings+dedup+tabs",
+				transform: (t) =>
+					replaceTabsWithSpaces(
+						removeDuplicateKeys(extractFromFindingsKeyword(t)),
+					),
 			},
 			// Then try more aggressive fixes
 			{
@@ -340,6 +348,17 @@ export function parseYamlWithFallbacks(
 					lastKey,
 				);
 				return extracted ?? t;
+			},
+		});
+		strategies.push({
+			name: "extract-by-markers+dedup",
+			transform: (t) => {
+				const extracted = extractYamlFromMarkers(
+					stripMarkdownCodeBlocks(t),
+					firstKey,
+					lastKey,
+				);
+				return removeDuplicateKeys(extracted ?? t);
 			},
 		});
 	}
