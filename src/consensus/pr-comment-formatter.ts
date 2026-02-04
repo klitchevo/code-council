@@ -73,15 +73,14 @@ function formatCategory(category: string): string {
 /**
  * Format model agreement as a string
  */
-function formatModelAgreement(cluster: FindingCluster): string {
-	const total =
-		cluster.agreeingModels.length +
-		cluster.silentModels.length +
-		cluster.disagreingModels.length;
+function formatModelAgreement(
+	cluster: FindingCluster,
+	totalModels: number,
+): string {
 	const agreeing = cluster.agreeingModels.length;
 	const confidence = Math.round(cluster.confidence * 100);
 
-	return `${agreeing}/${total} models | Confidence: ${confidence}%`;
+	return `${agreeing}/${totalModels} models | Confidence: ${confidence}%`;
 }
 
 /**
@@ -90,6 +89,7 @@ function formatModelAgreement(cluster: FindingCluster): string {
 function formatCommentBody(
 	cluster: FindingCluster,
 	showModelAgreement: boolean,
+	totalModels: number,
 ): string {
 	const lines: string[] = [];
 
@@ -101,7 +101,7 @@ function formatCommentBody(
 
 	// Model agreement info
 	if (showModelAgreement) {
-		lines.push(formatModelAgreement(cluster));
+		lines.push(formatModelAgreement(cluster, totalModels));
 		lines.push("");
 	}
 
@@ -271,10 +271,15 @@ export function formatPrComments(
 	}
 
 	// Format inline comments
+	const totalModels = report.participatingModels.length;
 	const comments: GitHubPrComment[] = commentsToInclude.map((mapped) => ({
 		path: mapped.path,
 		line: mapped.line,
-		body: formatCommentBody(mapped.cluster, opts.showModelAgreement),
+		body: formatCommentBody(
+			mapped.cluster,
+			opts.showModelAgreement,
+			totalModels,
+		),
 	}));
 
 	// Format summary body

@@ -57,17 +57,6 @@ function repairJson(jsonStr: string): string {
 	// Remove trailing commas before } or ]
 	repaired = repaired.replace(/,(\s*[}\]])/g, "$1");
 
-	// Strip suggestedCode fields entirely - they cause too many JSON issues
-	// Match "suggestedCode": "..." or "suggestedCode": null
-	repaired = repaired.replace(
-		/"suggestedCode"\s*:\s*(?:"(?:[^"\\]|\\.)*"|null)\s*,?/g,
-		"",
-	);
-
-	// Clean up any double commas or trailing commas we may have created
-	repaired = repaired.replace(/,\s*,/g, ",");
-	repaired = repaired.replace(/,(\s*[}\]])/g, "$1");
-
 	return repaired;
 }
 
