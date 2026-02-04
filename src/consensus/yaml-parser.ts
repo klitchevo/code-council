@@ -260,8 +260,22 @@ export function parseYamlWithFallbacks(
 ): unknown {
 	const strategies: Array<{ name: string; transform: (t: string) => string }> =
 		[
+			// Try simple approaches first (least likely to break valid YAML)
 			{ name: "raw", transform: (t) => t },
 			{ name: "strip-markdown", transform: stripMarkdownCodeBlocks },
+			{
+				name: "extract-findings-keyword",
+				transform: extractFromFindingsKeyword,
+			},
+			{
+				name: "strip-markdown+tabs",
+				transform: (t) => replaceTabsWithSpaces(stripMarkdownCodeBlocks(t)),
+			},
+			{
+				name: "remove-duplicate-keys",
+				transform: (t) => removeDuplicateKeys(stripMarkdownCodeBlocks(t)),
+			},
+			// Then try more aggressive fixes
 			{
 				name: "strip-markdown+fix-issues",
 				transform: (t) => tryFixYamlIssues(stripMarkdownCodeBlocks(t)),
@@ -298,19 +312,11 @@ export function parseYamlWithFallbacks(
 					),
 			},
 			{
-				name: "extract-findings-keyword",
-				transform: extractFromFindingsKeyword,
-			},
-			{
 				name: "extract-findings-keyword+fixes",
 				transform: (t) =>
 					tryFixYamlIssues(
 						replaceTabsWithSpaces(extractFromFindingsKeyword(t)),
 					),
-			},
-			{
-				name: "remove-duplicate-keys",
-				transform: (t) => removeDuplicateKeys(stripMarkdownCodeBlocks(t)),
 			},
 			{
 				name: "remove-duplicate-keys+all-fixes",
