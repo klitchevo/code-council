@@ -210,7 +210,7 @@ describe("parseExtractionResponse", () => {
 		expect(() => parseExtractionResponse(response, sourceModel)).toThrow();
 	});
 
-	it("throws on invalid category", () => {
+	it("maps invalid category to other", () => {
 		const response = JSON.stringify({
 			findings: [
 				{
@@ -222,7 +222,10 @@ describe("parseExtractionResponse", () => {
 				},
 			],
 		});
-		expect(() => parseExtractionResponse(response, sourceModel)).toThrow();
+		// Schema maps unknown categories to "other" for flexibility with LLM outputs
+		const findings = parseExtractionResponse(response, sourceModel);
+		expect(findings).toHaveLength(1);
+		expect(findings[0]?.category).toBe("other");
 	});
 
 	it("throws on invalid severity", () => {
