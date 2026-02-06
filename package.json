@@ -40,6 +40,7 @@
 		"check": "biome check src",
 		"check:fix": "biome check --write src",
 		"typecheck": "tsc --noEmit",
+		"update-models": "bun scripts/update-models.ts",
 		"prepare": "lefthook install"
 	},
 	"keywords": [
