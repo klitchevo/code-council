@@ -382,7 +382,8 @@ export type KnownModel =
 	| "z-ai/glm-4.6:exacto"
 	| "z-ai/glm-4.6v"
 	| "z-ai/glm-4.7"
-	| "z-ai/glm-4.7-flash";
+	| "z-ai/glm-4.7-flash"
+	| "z-ai/glm-5";
 // --- GENERATED:KnownModel:END ---
 
 /**
