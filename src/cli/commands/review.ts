@@ -35,7 +35,7 @@ import {
  * Default models if none specified via CLI
  */
 const DEFAULT_CLI_MODELS = [
-	"minimax/minimax-m2.1",
+	"minimax/minimax-m2.5",
 	"z-ai/glm-4.7",
 	"moonshotai/kimi-k2.5",
 	"deepseek/deepseek-v3.2",

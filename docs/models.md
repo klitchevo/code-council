@@ -8,7 +8,7 @@ Out of the box, Code Council uses these cost-effective models:
 
 | Model | Strengths | Provider |
 |-------|-----------|----------|
-| `minimax/minimax-m2.1` | Fast, cost-effective reasoning | Minimax |
+| `minimax/minimax-m2.5` | Fast, cost-effective reasoning | Minimax |
 | `z-ai/glm-4.7` | Strong multilingual capabilities | Z-AI |
 | `moonshotai/kimi-k2.5` | Advanced reasoning with thinking | Moonshot AI |
 | `deepseek/deepseek-v3.2` | State-of-the-art open model | DeepSeek |
@@ -38,7 +38,7 @@ For higher quality reviews, swap in frontier models:
 ```typescript
 models: {
   codeReview: [
-    "minimax/minimax-m2.1",
+    "minimax/minimax-m2.5",
     "z-ai/glm-4.7",
     "moonshotai/kimi-k2.5",
     "deepseek/deepseek-v3.2",
@@ -143,7 +143,7 @@ Use cheap defaults for daily work, premium for PRs:
 
 ```typescript
 models: {
-  codeReview: ["deepseek/deepseek-v3.2", "minimax/minimax-m2.1"],
+  codeReview: ["deepseek/deepseek-v3.2", "minimax/minimax-m2.5"],
   // Override manually for important reviews
 }
 ```
@@ -158,7 +158,7 @@ models: {
 | Gemini 2.0 Flash | Fast | Very Good | Medium | Good | Very Good |
 | DeepSeek V3.2 | Fast | Very Good | Low | Good | Good |
 | Kimi K2.5 | Medium | Good | Low | Good | Good |
-| Minimax M2.1 | Fast | Good | Lowest | Moderate | Good |
+| Minimax M2.5 | Fast | Good | Lowest | Moderate | Good |
 | GLM 4.7 | Fast | Good | Low | Moderate | Moderate |
 
 ## Why Multiple Models Matter

@@ -33,7 +33,7 @@ export const LLM_CONFIG = {
  * Default models if not configured via environment variables
  */
 export const DEFAULT_MODELS: string[] = [
-	"minimax/minimax-m2.1",
+	"minimax/minimax-m2.5",
 	"z-ai/glm-5",
 	"moonshotai/kimi-k2.5",
 	"deepseek/deepseek-v3.2",

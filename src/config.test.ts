@@ -30,7 +30,7 @@ vi.mock("./config/loader", () => ({
 }));
 
 describe("parseModels", () => {
-	const defaults = ["minimax/minimax-m2.1", "moonshotai/kimi-k2.5"];
+	const defaults = ["minimax/minimax-m2.5", "moonshotai/kimi-k2.5"];
 
 	it("should return defaults when env var is undefined", () => {
 		expect(parseModels(undefined, defaults)).toEqual(defaults);

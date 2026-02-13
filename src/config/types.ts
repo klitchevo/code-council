@@ -10,12 +10,11 @@
  * This is not exhaustive - any valid OpenRouter model ID string will work.
  *
  * Find all models at: https://openrouter.ai/models
- * Auto-generated on 2026-02-06T15:23:32.120Z - run `bun run update-models` to regenerate.
+ * Auto-generated on 2026-02-13T19:10:45.531Z - run `bun run update-models` to regenerate.
  */
 export type KnownModel =
 	// ai21
 	| "ai21/jamba-large-1.7"
-	| "ai21/jamba-mini-1.7"
 	// aion-labs
 	| "aion-labs/aion-1.0"
 	| "aion-labs/aion-1.0-mini"
@@ -25,7 +24,6 @@ export type KnownModel =
 	// alibaba
 	| "alibaba/tongyi-deepresearch-30b-a3b"
 	// allenai
-	| "allenai/molmo-2-8b"
 	| "allenai/olmo-2-0325-32b-instruct"
 	| "allenai/olmo-3-32b-think"
 	| "allenai/olmo-3-7b-instruct"
@@ -160,15 +158,14 @@ export type KnownModel =
 	| "minimax/minimax-m2"
 	| "minimax/minimax-m2-her"
 	| "minimax/minimax-m2.1"
+	| "minimax/minimax-m2.5"
 	// mistralai
 	| "mistralai/codestral-2508"
 	| "mistralai/devstral-2512"
 	| "mistralai/devstral-medium"
 	| "mistralai/devstral-small"
 	| "mistralai/ministral-14b-2512"
-	| "mistralai/ministral-3b"
 	| "mistralai/ministral-3b-2512"
-	| "mistralai/ministral-8b"
 	| "mistralai/ministral-8b-2512"
 	| "mistralai/mistral-7b-instruct"
 	| "mistralai/mistral-7b-instruct-v0.1"
@@ -186,14 +183,11 @@ export type KnownModel =
 	| "mistralai/mistral-small-3.1-24b-instruct"
 	| "mistralai/mistral-small-3.2-24b-instruct"
 	| "mistralai/mistral-small-creative"
-	| "mistralai/mistral-tiny"
 	| "mistralai/mixtral-8x22b-instruct"
 	| "mistralai/mixtral-8x7b-instruct"
-	| "mistralai/pixtral-12b"
 	| "mistralai/pixtral-large-2411"
 	| "mistralai/voxtral-small-24b-2507"
 	// moonshotai
-	| "moonshotai/kimi-dev-72b"
 	| "moonshotai/kimi-k2"
 	| "moonshotai/kimi-k2-0905"
 	| "moonshotai/kimi-k2-0905:exacto"
@@ -280,6 +274,7 @@ export type KnownModel =
 	// opengvlab
 	| "opengvlab/internvl3-78b"
 	// openrouter
+	| "openrouter/aurora-alpha"
 	| "openrouter/auto"
 	| "openrouter/bodybuilder"
 	| "openrouter/free"
@@ -314,6 +309,7 @@ export type KnownModel =
 	| "qwen/qwen3-30b-a3b-instruct-2507"
 	| "qwen/qwen3-30b-a3b-thinking-2507"
 	| "qwen/qwen3-32b"
+	| "qwen/qwen3-4b"
 	| "qwen/qwen3-8b"
 	| "qwen/qwen3-coder"
 	| "qwen/qwen3-coder-30b-a3b-instruct"
@@ -322,6 +318,7 @@ export type KnownModel =
 	| "qwen/qwen3-coder-plus"
 	| "qwen/qwen3-coder:exacto"
 	| "qwen/qwen3-max"
+	| "qwen/qwen3-max-thinking"
 	| "qwen/qwen3-next-80b-a3b-instruct"
 	| "qwen/qwen3-next-80b-a3b-thinking"
 	| "qwen/qwen3-vl-235b-a22b-instruct"
@@ -343,8 +340,8 @@ export type KnownModel =
 	| "sao10k/l3.1-70b-hanami-x1"
 	| "sao10k/l3.1-euryale-70b"
 	| "sao10k/l3.3-euryale-70b"
-	// stepfun-ai
-	| "stepfun-ai/step3"
+	// stepfun
+	| "stepfun/step-3.5-flash"
 	// switchpoint
 	| "switchpoint/router"
 	// tencent
